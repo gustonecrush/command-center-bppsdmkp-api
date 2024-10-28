@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pendidik;
-use App\Models\School;
 use Illuminate\Http\Request;
 
 class PendidikController extends Controller
