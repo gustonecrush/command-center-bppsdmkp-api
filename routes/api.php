@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AlumniController;
 use App\Http\Controllers\Api\PendidikController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +20,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-
 Route::get('/pendidiks', [PendidikController::class, 'index']);
+Route::get('/alumnis', [AlumniController::class, 'index']);
 Route::get('/pendidiks/summary', [PendidikController::class, 'summary']);
+Route::get('/alumnis/summary', [AlumniController::class, 'summary']);
+

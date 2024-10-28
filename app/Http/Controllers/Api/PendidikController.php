@@ -65,7 +65,6 @@ class PendidikController extends Controller
     }
 
 
-
     public function summary(Request $request)
     {
         // Get the satdik_id from the query parameters
