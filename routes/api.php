@@ -19,4 +19,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::apiResource('/pendidiks', PendidikController::class);
+
+Route::get('/pendidikname: s', [PendidikController::class, 'index']);
+Route::get('/pendidiks/summary', [PendidikController::class, 'summary']);
