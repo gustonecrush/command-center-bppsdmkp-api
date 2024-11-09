@@ -54,10 +54,17 @@ class AlumniController extends Controller
             ->selectRaw('income_range, COUNT(*) as count')
             ->get();
 
+        $gender_counts = $query->clone()
+            ->select('gender')
+            ->groupBy('gender')
+            ->selectRaw('gender, COUNT(*) as count')
+            ->get();
+
         // Calculate total counts
         $total_absorption_count = $absorption_counts->sum('count');
         $total_company_country_count = $company_country_counts->sum('count');
         $total_income_range_count = $income_range_counts->sum('count');
+        $total_gender_count = $gender_counts->sum('count');
 
         // Prepare the data with totals
         $data = [
@@ -67,6 +74,9 @@ class AlumniController extends Controller
             'total_company_country_count' => $total_company_country_count,
             'income_range_count' => $income_range_counts,
             'total_income_range_count' => $total_income_range_count,
+            'gender_count' => $gender_counts,
+            'total_gender_count' => $total_gender_count
+
         ];
 
         // Return a JSON response
