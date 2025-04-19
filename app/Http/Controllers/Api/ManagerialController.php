@@ -380,4 +380,75 @@ class ManagerialController extends Controller
             'realisasi_belanja' => $realisasiBelanja
         ]);
     }
+
+    public function getRealisasiPendapatanPerSatkerPerAkun(Request $request)
+    {
+        // 1. Get total pagu & realisasi per kdsatker
+        $totalData = DB::table('tbl_dipa_pendapatan as d')
+            ->leftJoin('tbl_realisasi_pendapatan as r', function ($join) {
+                $join->on('d.kdsatker', '=', 'r.kdsatker')
+                    ->on('d.akun', '=', 'r.akun');
+            })
+            ->select(
+                'd.kdsatker',
+                'd.nama_satker',
+                DB::raw('SUM(d.amount) as pagu'),
+                DB::raw('IFNULL(SUM(r.amount), 0) as realisasi')
+            )
+            ->groupBy('d.kdsatker', 'd.nama_satker')
+            ->get();
+
+        // 2. Get detail per akun per kdsatker
+        $details = DB::table('tbl_dipa_pendapatan as d')
+            ->leftJoin('tbl_realisasi_pendapatan as r', function ($join) {
+                $join->on('d.kdsatker', '=', 'r.kdsatker')
+                    ->on('d.akun', '=', 'r.akun');
+            })
+            ->select(
+                'd.kdsatker',
+                'd.akun',
+                'd.nama_akun',
+                DB::raw('SUM(d.amount) as pagu'),
+                DB::raw('IFNULL(SUM(r.amount), 0) as realisasi')
+            )
+            ->groupBy('d.kdsatker', 'd.akun', 'd.nama_akun')
+            ->get();
+
+        // 3. Format response
+        $response = $totalData->map(function ($row) use ($details) {
+            $filteredDetails = $details->where('kdsatker', $row->kdsatker)->map(function ($d) {
+                $percentage = $d->pagu > 0 ? round(($d->realisasi / $d->pagu) * 100, 2) : 0;
+
+                return [
+                    'output' => $d->akun . ' - ' . $d->nama_akun,
+                    'pagu' => (float) $d->pagu,
+                    'realisasi' => (float) $d->realisasi,
+                    'percentage' => $percentage
+                ];
+            });
+
+            $percentage = $row->pagu > 0 ? round(($row->realisasi / $row->pagu) * 100, 2) : 0;
+
+            return [
+                'nama_satker' => $row->nama_satker,
+                'pagu' => (float) $row->pagu,
+                'realisasi' => (float) $row->realisasi,
+                'percentage' => $percentage,
+                'details' => $filteredDetails->values()
+            ];
+        });
+
+        // 4. Custom sorting by keyword in nama_satker
+        $sorted = $response->sortBy(function ($item) {
+            $name = strtolower($item['nama_satker']);
+            if (str_contains($name, 'sekretariat')) return 1;
+            if (str_contains($name, 'pusat')) return 2;
+            if (str_contains($name, 'politeknik')) return 3;
+            if (str_contains($name, 'balai')) return 4;
+            if (str_contains($name, 'sekolah')) return 5;
+            return 6;
+        })->values();
+
+        return response()->json($sorted);
+    }
 }
