@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\AlumniController;
+use App\Http\Controllers\Api\ManagerialController;
 use App\Http\Controllers\Api\PendidikController;
 use App\Http\Controllers\Api\PentaruController;
 use App\Http\Controllers\Api\PesertaDidikController;
+use App\Http\Controllers\Api\SatuanPendidikanController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,3 +36,18 @@ Route::get('/', []);
 
 Route::get('/pentaru', [PentaruController::class, 'index']);
 Route::get('/pentaru/pendaftar/{id}', [PentaruController::class, 'showByRowID']);
+
+Route::get('/satuan-pendidikan', [SatuanPendidikanController::class, 'index']);
+
+Route::get('/rekap-per-pusat', [ManagerialController::class, 'rekapPerSatker']);
+
+Route::get('/pendapatan/rekap-per-satker', [ManagerialController::class, 'rekapPerSatkerPendapatan']);
+Route::get('/pendapatan/realisasi-sisa', [ManagerialController::class, 'getRealisasiDanSisaPendapatan']);
+Route::get('/pendapatan/realisasi-akun', [ManagerialController::class, 'getRealisasiPendapatanPerAkun']);
+
+Route::get('/summary', [ManagerialController::class, 'summary']);
+
+Route::get('/anggaran/rincian-realisasi', [ManagerialController::class, 'getRincianRealisasiAnggaran']);
+
+Route::get('/anggaran/realisasi-sisa', [ManagerialController::class, 'getRealisasiDanSisa']);
+Route::get('/anggaran/realisasi-grouped', [ManagerialController::class, 'getRealisasiGrouped']);

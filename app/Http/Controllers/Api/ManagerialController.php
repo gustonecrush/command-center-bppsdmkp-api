@@ -1,0 +1,383 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Models\TblRealisasiBelanja;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+
+class ManagerialController extends Controller
+{
+    public function rekapPerSatker(Request $request)
+    {
+        $tahun = $request->input('tahun', now()->year);
+        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+
+        // Pre-aggregate DIPA to reduce row count and avoid duplication
+        $subqueryPagu = DB::table('tbl_dipa_belanja')
+            ->select('kdsatker', DB::raw('SUM(amount) as pagu'))
+            ->groupBy('kdsatker');
+
+        // Main query
+        $query = DB::table('tbl_realisasi_belanja as realisasi')
+            ->leftJoinSub($subqueryPagu, 'dipa', 'realisasi.kdsatker', '=', 'dipa.kdsatker')
+            ->select(
+                'realisasi.kdsatker',
+                'realisasi.nama_satker',
+                DB::raw('COALESCE(dipa.pagu, 0) as pagu'),
+                DB::raw('SUM(realisasi.amount) as realisasi'),
+                DB::raw("SUM(CASE WHEN realisasi.tanggal <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) as realisasi_sampai_tanggal"),
+                DB::raw("ROUND(
+                CASE 
+                    WHEN COALESCE(dipa.pagu, 0) > 0 
+                    THEN (SUM(CASE WHEN realisasi.tanggal <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) / dipa.pagu) * 100
+                    ELSE 0 
+                END, 2
+            ) as persen_realisasi")
+            )
+            ->whereYear('realisasi.tanggal', $tahun)
+            ->groupBy('realisasi.kdsatker', 'realisasi.nama_satker', 'dipa.pagu')
+            ->orderByRaw("
+            CASE
+                WHEN LOWER(nama_satker) LIKE '%sekretariat%' THEN 1
+                WHEN LOWER(nama_satker) LIKE '%pusat%' THEN 2
+                WHEN LOWER(nama_satker) LIKE '%politeknik%' THEN 3
+                WHEN LOWER(nama_satker) LIKE '%sekolah%' THEN 4
+                WHEN LOWER(nama_satker) LIKE '%loka%' THEN 5
+                ELSE 6
+            END, nama_satker ASC
+        ")
+            ->get();
+
+        return response()->json($query);
+    }
+
+    public function rekapPerSatkerPendapatan(Request $request)
+    {
+        $tahun = $request->input('tahun', now()->year);
+        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+
+        // Pre-aggregate DIPA Pendapatan to reduce row count and avoid duplication
+        $subqueryPagu = DB::table('tbl_dipa_pendapatan')
+            ->select('kdsatker', DB::raw('SUM(amount) as pagu'))
+            ->groupBy('kdsatker');
+
+        // Main query for Realisasi Pendapatan
+        $query = DB::table('tbl_realisasi_pendapatan as realisasi')
+            ->leftJoinSub($subqueryPagu, 'dipa', 'realisasi.kdsatker', '=', 'dipa.kdsatker')
+            ->select(
+                'realisasi.kdsatker',
+                'realisasi.nama_satker',
+                DB::raw('COALESCE(dipa.pagu, 0) as pagu'),
+                DB::raw('SUM(realisasi.amount) as realisasi'),
+                DB::raw("SUM(CASE WHEN realisasi.tanggal <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) as realisasi_sampai_tanggal"),
+                DB::raw("ROUND(
+                CASE 
+                    WHEN COALESCE(dipa.pagu, 0) > 0 
+                    THEN (SUM(CASE WHEN realisasi.tanggal <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) / dipa.pagu) * 100
+                    ELSE 0 
+                END, 2
+            ) as persen_realisasi")
+            )
+            ->whereYear('realisasi.tanggal', $tahun)
+            ->groupBy('realisasi.kdsatker', 'realisasi.nama_satker', 'dipa.pagu')
+            ->orderByRaw("
+            CASE
+                WHEN LOWER(nama_satker) LIKE '%sekretariat%' THEN 1
+                WHEN LOWER(nama_satker) LIKE '%pusat%' THEN 2
+                WHEN LOWER(nama_satker) LIKE '%politeknik%' THEN 3
+                WHEN LOWER(nama_satker) LIKE '%sekolah%' THEN 4
+                WHEN LOWER(nama_satker) LIKE '%loka%' THEN 5
+                ELSE 6
+            END, nama_satker ASC
+        ")
+            ->get();
+
+        return response()->json($query);
+    }
+
+
+
+
+    public function getRealisasiDanSisa(Request $request): JsonResponse
+    {
+        $tahun = $request->input('tahun', now()->year);
+        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+
+        // Total pagu from DIPA
+        $totalPagu = DB::table('tbl_dipa_belanja')
+            ->sum('amount');
+
+        // Total realisasi until the given date and year
+        $totalRealisasi = DB::table('tbl_realisasi_belanja')
+            ->whereYear('tanggal', $tahun)
+            ->whereDate('tanggal', '<=', $tanggal)
+            ->sum('amount');
+
+        $sisa = $totalPagu - $totalRealisasi;
+
+        return response()->json([
+            'tahun' => (int) $tahun,
+            'tanggal' => $tanggal,
+            'pagu' => $totalPagu,
+            'realisasi' => $totalRealisasi,
+            'sisa' => $sisa,
+        ]);
+    }
+
+    public function getRincianRealisasiAnggaran(Request $request): JsonResponse
+    {
+        $tahun = $request->input('tahun', now()->year);
+        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+
+        // Total pagu from DIPA
+        $totalPagu = DB::table('tbl_dipa_belanja')->sum('amount');
+
+        // Total realisasi until the given date and year
+        $totalRealisasi = DB::table('tbl_realisasi_belanja')
+            ->whereYear('tanggal', $tahun)
+            ->whereDate('tanggal', '<=', $tanggal)
+            ->sum('amount');
+
+        $sisa = $totalPagu - $totalRealisasi;
+
+        $realisasiFiltered = DB::table('tbl_realisasi_belanja')
+            ->whereYear('tanggal', $tahun)
+            ->whereDate('tanggal', '<=', $tanggal);
+
+        $akunGroups = DB::table(DB::raw("({$realisasiFiltered->toSql()}) as realisasi"))
+            ->mergeBindings($realisasiFiltered) // Required to bind params
+            ->join('tbl_dipa_belanja as dipa', function ($join) {
+                $join->on('realisasi.kdsatker', '=', 'dipa.kdsatker')
+                    ->on('realisasi.akun', '=', 'dipa.akun');
+            })
+            ->select(
+                DB::raw("LEFT(realisasi.akun, 2) as kode_akun"),
+                DB::raw("SUM(dipa.amount) as pagu"),
+                DB::raw("SUM(realisasi.amount) as realisasi")
+            )
+            ->groupBy(DB::raw("LEFT(realisasi.akun, 2)"))
+            ->get();
+
+
+        // Map akun prefix to category names
+        $akunLabels = [
+            '51' => 'Belanja Pegawai',
+            '52' => 'Belanja Barang dan Jasa',
+            '53' => 'Belanja Modal',
+        ];
+
+        $akun = [];
+
+        foreach ($akunGroups as $group) {
+            $kode = $group->kode_akun;
+            $pagu = (float) $group->pagu;
+            $realisasi = (float) $group->realisasi;
+            $persentase = $pagu > 0 ? round(($realisasi / $pagu) * 100, 2) : 0;
+
+            $persentaseSisa = $pagu > 0 ? round((($pagu - $realisasi) / $pagu) * 100, 2) : 0;
+
+            $akun[] = [
+                'name' => $akunLabels[$kode] ?? 'Lainnya',
+                'pagu' => $pagu,
+                'realisasi' => $realisasi,
+                'sisa' => $pagu - $realisasi,
+                'persentase' => $persentase,
+                'persentase_sisa' => $persentaseSisa,
+            ];
+        }
+
+
+        return response()->json([
+            'tahun' => (int) $tahun,
+            'tanggal' => $tanggal,
+            'pagu' => $totalPagu,
+            'realisasi' => $totalRealisasi,
+            'sisa' => ($totalPagu - $totalRealisasi),
+            'persentase' => $totalPagu > 0 ? round(($totalRealisasi / $totalPagu) * 100, 2) : 0,
+            'persentase_sisa' => $totalPagu > 0 ? round((($totalPagu - $totalRealisasi) / $totalPagu) * 100, 2) : 0,
+            'akun' => $akun
+        ]);
+    }
+
+
+    public function getRealisasiDanSisaPendapatan(Request $request): JsonResponse
+    {
+        $tahun = $request->input('tahun', now()->year);
+        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+
+        // Total pagu from DIPA Pendapatan
+        $totalPagu = DB::table('tbl_dipa_pendapatan')
+            ->sum('amount');
+
+        // Total realisasi until the given date and year from Realisasi Pendapatan
+        $totalRealisasi = DB::table('tbl_realisasi_pendapatan')
+            ->whereYear('tanggal', $tahun)
+            ->whereDate('tanggal', '<=', $tanggal)
+            ->sum('amount');
+
+        // Calculate remaining amount (sisa)
+        $sisa = $totalPagu - $totalRealisasi;
+
+        // Calculate the percentage (presentasi)
+        $presentasi = $totalPagu > 0 ? round(($totalRealisasi / $totalPagu) * 100, 2) : 0;
+
+        return response()->json([
+            'tahun' => (int) $tahun,
+            'tanggal' => $tanggal,
+            'pagu' => $totalPagu,
+            'realisasi' => $totalRealisasi,
+            'sisa' => $sisa,
+            'persentasi' => $presentasi,
+        ]);
+    }
+
+
+
+    public function getRealisasiGrouped(Request $request)
+    {
+        $tahun = $request->input('tahun', date('Y'));
+        $tanggal = $request->input('tanggal', now()->toDateString());
+
+        $startDate = $tahun . '-01-01';
+        $endDate = $tanggal;
+
+        // Optional: Use caching for 5 minutes to avoid repeated heavy queries
+        $result = Cache::remember("realisasi_grouped:{$tahun}:{$tanggal}", 300, function () use ($startDate, $endDate) {
+
+            $query = "
+            SELECT 
+                dipa.kegiatan,
+                dipa.kegiatan_name,
+                dipa.output,
+                dipa.output_name,
+                SUM(dipa.amount) AS pagu,
+                SUM(COALESCE(r.amount, 0)) AS realisasi
+            FROM tbl_dipa_belanja dipa
+            LEFT JOIN (
+                SELECT * FROM tbl_realisasi_belanja 
+                WHERE tanggal BETWEEN ? AND ?
+            ) r ON dipa.kdsatker = r.kdsatker 
+                AND dipa.kegiatan = r.kegiatan
+                AND dipa.output = r.output
+            GROUP BY dipa.kegiatan, dipa.kegiatan_name, dipa.output, dipa.output_name
+        ";
+
+            $data = DB::select($query, [$startDate, $endDate]);
+
+            // Group by kegiatan
+            $grouped = [];
+
+            foreach ($data as $item) {
+                $kegiatanKey = $item->kegiatan;
+
+                if (!isset($grouped[$kegiatanKey])) {
+                    $grouped[$kegiatanKey] = [
+                        'kegiatan' => $item->kegiatan,
+                        'kegiatan_name' => $item->kegiatan_name,
+                        'pagu' => 0,
+                        'realisasi' => 0,
+                        'percentage' => 0,
+                        'items' => []
+                    ];
+                }
+
+                $grouped[$kegiatanKey]['pagu'] += $item->pagu;
+                $grouped[$kegiatanKey]['realisasi'] += $item->realisasi;
+
+                $grouped[$kegiatanKey]['items'][] = [
+                    'output' => $item->output,
+                    'output_name' => $item->output_name,
+                    'pagu' => (float) $item->pagu,
+                    'realisasi' => (float) $item->realisasi,
+                    'percentage' => $item->pagu > 0 ? round(($item->realisasi / $item->pagu) * 100, 2) : 0,
+                ];
+            }
+
+            // Final percentage calculation
+            $result = [];
+            foreach ($grouped as $data) {
+                $data['percentage'] = $data['pagu'] > 0 ? round(($data['realisasi'] / $data['pagu']) * 100, 2) : 0;
+                $result[] = $data;
+            }
+
+            return $result;
+        });
+
+        return response()->json($result);
+    }
+
+
+    public function getRealisasiPendapatanPerAkun(Request $request): JsonResponse
+    {
+        $tahun = $request->input('tahun', now()->year);
+        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+
+        // Pre-aggregate DIPA
+        $subqueryPagu = DB::table('tbl_dipa_pendapatan')
+            ->select('akun', 'nama_akun', DB::raw('SUM(amount) as pagu'))
+            ->groupBy('akun', 'nama_akun');
+
+        // Main query joining with realisasi
+        $data = DB::table('tbl_realisasi_pendapatan as realisasi')
+            ->rightJoinSub($subqueryPagu, 'dipa', 'realisasi.akun', '=', 'dipa.akun')
+            ->select(
+                'dipa.akun',
+                'dipa.nama_akun',
+                'dipa.pagu',
+                DB::raw("SUM(CASE WHEN YEAR(realisasi.tanggal) = $tahun AND realisasi.tanggal <= '$tanggal' THEN realisasi.amount ELSE 0 END) as realisasi")
+            )
+            ->groupBy('dipa.akun', 'dipa.nama_akun', 'dipa.pagu')
+            ->orderBy('dipa.akun')
+            ->get();
+
+        // Format and calculate % in the response
+        $result = [];
+        foreach ($data as $index => $item) {
+            $realisasi = $item->realisasi ?? 0;
+            $presentasi = $item->pagu > 0 ? round(($realisasi / $item->pagu) * 100, 2) : 0;
+
+            $result[] = [
+                'no' => $index + 1,
+                'akun' => $item->akun . ' - ' . $item->nama_akun,
+                'pagu' => (float) $item->pagu,
+                'realisasi' => (float) $realisasi,
+                'persentasi' => $presentasi
+            ];
+        }
+
+        return response()->json($result);
+    }
+
+
+
+
+
+
+    public function summary(Request $request)
+    {
+        $tanggal = $request->input('tanggal');
+        $tahun = $request->input('tahun', now()->year);
+
+        $realisasiBelanja = DB::table('tbl_realisasi_belanja')
+            ->select(
+                'kdsatker',
+                'nama_satker',
+                DB::raw('SUM(amount) as realisasi'),
+                DB::raw('MAX(tanggal) as tanggal_terakhir')
+            )
+            ->whereYear('tanggal', $tahun)
+            ->where('tanggal', '<=', $tanggal)
+            ->groupBy('kdsatker', 'nama_satker')
+            ->get();
+
+        // Add similar logic for pendapatan if needed
+
+        return response()->json([
+            'realisasi_belanja' => $realisasiBelanja
+        ]);
+    }
+}
