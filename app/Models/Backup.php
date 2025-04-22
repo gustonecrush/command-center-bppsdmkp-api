@@ -10,4 +10,5 @@ class Backup extends Model
     use HasFactory;
 
     protected $table = "backups";
+    protected $fillable = ['kode_akses', 'backup'];
 }
