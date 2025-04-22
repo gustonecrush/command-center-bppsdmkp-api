@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Pendaftar;
 use App\Models\Pendidik;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PentaruController extends Controller
 {
@@ -88,5 +89,59 @@ class PentaruController extends Controller
 
         // Return a JSON response
         return response()->json($data);
+    }
+
+    public function getGrandSummaryPentaru(Request $request)
+    {
+        $tahun = $request->query('tahun');
+        $type = $request->query('type'); // SUPM or POLTEK
+
+        $query = DB::table('pendaftar');
+
+        // Filter by year (based on Tanggal_Data)
+        if ($tahun) {
+            $query->whereYear('Tanggal_Data', $tahun);
+        }
+
+
+
+        $total_data = $query->count();
+
+        $total_lolos = (clone $query)->where('Status_Lolos', 2)->count();
+        $total_lolos_adm = (clone $query)->where('Status_Lolos', 1)->count();
+
+        $gender_summary = (clone $query)
+            ->select('Jenis_Kelamin', DB::raw('count(*) as total'))
+            ->groupBy('Jenis_Kelamin')
+            ->get();
+
+        $kampus_summary_raw = (clone $query)
+            ->select('Kampus_1', DB::raw('count(*) as total'))
+            ->groupBy('Kampus_1')
+            ->get();
+
+        $kampus_summary = [];
+
+        foreach ($kampus_summary_raw as $kampus) {
+            $prodi_summary = (clone $query)
+                ->where('Kampus_1', $kampus->Kampus_1)
+                ->select('Prodi_1', DB::raw('count(*) as total'))
+                ->groupBy('Prodi_1')
+                ->get();
+
+            $kampus_summary[] = [
+                'Kampus_1' => $kampus->Kampus_1,
+                'total' => $kampus->total,
+                'prodis' => $prodi_summary,
+            ];
+        }
+
+        return response()->json([
+            'total_data' => $total_data,
+            'total_lolos' => $total_lolos,
+            'total_lolos_adm' => $total_lolos_adm,
+            'gender_summary' => $gender_summary,
+            'kampus_summary' => $kampus_summary,
+        ]);
     }
 }

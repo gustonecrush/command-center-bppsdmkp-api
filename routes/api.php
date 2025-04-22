@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AlumniController;
+use App\Http\Controllers\Api\BackupController;
 use App\Http\Controllers\Api\ManagerialController;
 use App\Http\Controllers\Api\PendidikController;
 use App\Http\Controllers\Api\PentaruController;
@@ -53,3 +54,9 @@ Route::get('/anggaran/realisasi-sisa', [ManagerialController::class, 'getRealisa
 Route::get('/anggaran/realisasi-grouped', [ManagerialController::class, 'getRealisasiGrouped']);
 
 Route::get('/pendapatan/per-satker-per-akun', [ManagerialController::class, 'getRealisasiPendapatanPerSatkerPerAkun']);
+
+Route::get('/pentaru/summary', [PentaruController::class, 'getGrandSummaryPentaru']);
+
+
+Route::get('/verify/{kode_akses}', [BackupController::class, 'verify']);
+Route::get('/backup/{kode_akses}', [BackupController::class, 'getBackup']);
