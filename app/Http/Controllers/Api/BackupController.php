@@ -34,12 +34,12 @@ class BackupController extends Controller
     {
         $request->validate([
             'kode_akses' => 'required|string',
-            'backup' => 'required|array', // expecting JSON from frontend
+            'backup' => 'required|string', // expecting JSON from frontend
         ]);
 
         $backup = Backup::updateOrCreate(
             ['kode_akses' => $request->kode_akses],
-            ['backup' => json_encode($request->backup)]
+            ['backup' => $request->backup]
         );
 
         return response()->json([
