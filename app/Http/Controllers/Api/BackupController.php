@@ -29,4 +29,22 @@ class BackupController extends Controller
             'backup' => json_decode($backup->backup), // assuming backup is stored as JSON string
         ]);
     }
+
+    public function storeOrUpdate(Request $request)
+    {
+        $request->validate([
+            'kode_akses' => 'required|string',
+            'backup' => 'required|array', // expecting JSON from frontend
+        ]);
+
+        $backup = Backup::updateOrCreate(
+            ['kode_akses' => $request->kode_akses],
+            ['backup' => json_encode($request->backup)]
+        );
+
+        return response()->json([
+            'message' => 'Backup stored successfully',
+            'data' => $backup,
+        ]);
+    }
 }
