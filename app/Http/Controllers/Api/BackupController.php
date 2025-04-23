@@ -47,4 +47,17 @@ class BackupController extends Controller
             'data' => $backup,
         ]);
     }
+
+    public function destroyByKodeAkses($kode_akses)
+    {
+        $backup = Backup::where('kode_akses', $kode_akses)->first();
+
+        if (!$backup) {
+            return response()->json(['error' => 'Kode akses not found'], 404);
+        }
+
+        $backup->delete();
+
+        return response()->json(['message' => 'Backup deleted successfully']);
+    }
 }
