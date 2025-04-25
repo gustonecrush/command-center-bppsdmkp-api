@@ -29,16 +29,16 @@ class ManagerialController extends Controller
                 'realisasi.nama_satker',
                 DB::raw('COALESCE(dipa.pagu, 0) as pagu'),
                 DB::raw('SUM(realisasi.amount) as realisasi'),
-                DB::raw("SUM(CASE WHEN realisasi.tanggal <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) as realisasi_sampai_tanggal"),
+                DB::raw("SUM(CASE WHEN realisasi.tanggal_omspan <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) as realisasi_sampai_tanggal"),
                 DB::raw("ROUND(
                 CASE 
                     WHEN COALESCE(dipa.pagu, 0) > 0 
-                    THEN (SUM(CASE WHEN realisasi.tanggal <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) / dipa.pagu) * 100
+                    THEN (SUM(CASE WHEN realisasi.tanggal_omspan <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) / dipa.pagu) * 100
                     ELSE 0 
                 END, 2
             ) as persen_realisasi")
             )
-            ->whereYear('realisasi.tanggal', $tahun)
+            ->whereYear('realisasi.tanggal_omspan', $tahun)
             ->groupBy('realisasi.kdsatker', 'realisasi.nama_satker', 'dipa.pagu')
             ->orderByRaw("
             CASE
@@ -73,16 +73,16 @@ class ManagerialController extends Controller
                 'realisasi.nama_satker',
                 DB::raw('COALESCE(dipa.pagu, 0) as pagu'),
                 DB::raw('SUM(realisasi.amount) as realisasi'),
-                DB::raw("SUM(CASE WHEN realisasi.tanggal <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) as realisasi_sampai_tanggal"),
+                DB::raw("SUM(CASE WHEN realisasi.tanggal_omspan <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) as realisasi_sampai_tanggal"),
                 DB::raw("ROUND(
                 CASE 
                     WHEN COALESCE(dipa.pagu, 0) > 0 
-                    THEN (SUM(CASE WHEN realisasi.tanggal <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) / dipa.pagu) * 100
+                    THEN (SUM(CASE WHEN realisasi.tanggal_omspan <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) / dipa.pagu) * 100
                     ELSE 0 
                 END, 2
             ) as persen_realisasi")
             )
-            ->whereYear('realisasi.tanggal', $tahun)
+            ->whereYear('realisasi.tanggal_omspan', $tahun)
             ->groupBy('realisasi.kdsatker', 'realisasi.nama_satker', 'dipa.pagu')
             ->orderByRaw("
             CASE
@@ -328,7 +328,7 @@ class ManagerialController extends Controller
                 'dipa.akun',
                 'dipa.nama_akun',
                 'dipa.pagu',
-                DB::raw("SUM(CASE WHEN YEAR(realisasi.tanggal) = $tahun AND realisasi.tanggal <= '$tanggal' THEN realisasi.amount ELSE 0 END) as realisasi")
+                DB::raw("SUM(CASE WHEN YEAR(realisasi.tanggal_omspan) = $tahun AND realisasi.tanggal_omspan <= '$tanggal' THEN realisasi.amount ELSE 0 END) as realisasi")
             )
             ->groupBy('dipa.akun', 'dipa.nama_akun', 'dipa.pagu')
             ->orderBy('dipa.akun')
