@@ -461,22 +461,44 @@ class ManagerialController extends Controller
             return response()->json(['error' => 'month and year are required'], 400);
         }
 
-        $results = DB::table(DB::raw('
-                (SELECT DATE(tanggal_omspan) as date, SUM(amount) as realisasi_amount
-                 FROM tbl_realisasi_belanja
-                 WHERE YEAR(tanggal_omspan) = ? AND MONTH(tanggal_omspan) = ?
-                 GROUP BY DATE(tanggal_omspan)) as realisasi
-            '))
-            ->leftJoin(DB::raw('
-                (SELECT DATE(tanggal_omspan) as date, SUM(amount) as dipa_amount
-                 FROM tbl_dipa_belanja
-                 GROUP BY DATE(tanggal_omspan)) as dipa
-            '), 'realisasi.date', '=', 'dipa.date')
-            ->select('realisasi.date', 'realisasi.realisasi_amount', DB::raw('IFNULL(dipa.dipa_amount, 0) as dipa_amount'))
-            ->orderBy('realisasi.date')
-            ->setBindings([$year, $month]) // bind the year and month to raw query
+        $results = DB::table('tbl_realisasi_belanja')
+            ->selectRaw('
+                DATE(tanggal_omspan) as date,
+                LEFT(akun, 2) as kode_akun,
+                SUM(amount) as realisasi_amount
+            ')
+            ->whereYear('tanggal_omspan', $year)
+            ->whereMonth('tanggal_omspan', $month)
+            ->groupBy(DB::raw('DATE(tanggal_omspan), LEFT(akun, 2)'))
+            ->orderBy('date')
             ->get();
 
-        return response()->json($results);
+        // Map results into format grouped by date with types
+        $grouped = [];
+
+        $akunLabels = [
+            '51' => 'Belanja Pegawai',
+            '52' => 'Belanja Barang dan Jasa',
+            '53' => 'Belanja Modal',
+        ];
+
+        foreach ($results as $row) {
+            $date = $row->date;
+            $type = $akunLabels[$row->kode_akun] ?? 'Lainnya';
+
+            if (!isset($grouped[$date])) {
+                $grouped[$date] = [
+                    'date' => $date,
+                    'Belanja Pegawai' => 0,
+                    'Belanja Barang dan Jasa' => 0,
+                    'Belanja Modal' => 0,
+                    'Lainnya' => 0,
+                ];
+            }
+
+            $grouped[$date][$type] += (float) $row->realisasi_amount;
+        }
+
+        return response()->json(array_values($grouped));
     }
 }
