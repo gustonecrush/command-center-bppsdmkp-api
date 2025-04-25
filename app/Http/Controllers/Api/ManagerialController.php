@@ -452,7 +452,7 @@ class ManagerialController extends Controller
         return response()->json($sorted);
     }
 
-    public function getRealisasiPerWeek(Request $request)
+    public function getRealisasiBelanjaPerDay(Request $request)
     {
         $year = $request->input('year');
         $month = $request->input('month');
@@ -461,17 +461,20 @@ class ManagerialController extends Controller
             return response()->json(['error' => 'month and year are required'], 400);
         }
 
-        $results = DB::table('tbl_realisasi_belanja')
+        $results = DB::table('tbl_realisasi_belanja as realisasi')
             ->selectRaw('
-                WEEK(tanggal_omspan, 1) as week_number,
-                MIN(tanggal_omspan) as start_date,
-                MAX(tanggal_omspan) as end_date,
-                SUM(amount) as total_amount
+                DATE(realisasi.tanggal_omspan) as date,
+                SUM(realisasi.amount) as realisasi_amount,
+                (
+                    SELECT SUM(dipa.amount)
+                    FROM tbl_dipa_belanja dipa
+                    WHERE dipa.tanggal_omspan = realisasi.tanggal_omspan
+                ) as dipa_amount
             ')
-            ->whereYear('tanggal_omspan', $year)
-            ->whereMonth('tanggal_omspan', $month)
-            ->groupBy(DB::raw('WEEK(tanggal_omspan, 1)'))
-            ->orderBy(DB::raw('WEEK(tanggal_omspan, 1)'))
+            ->whereYear('realisasi.tanggal_omspan', $year)
+            ->whereMonth('realisasi.tanggal_omspan', $month)
+            ->groupBy(DB::raw('DATE(realisasi.tanggal_omspan)'))
+            ->orderBy(DB::raw('DATE(realisasi.tanggal_omspan)'))
             ->get();
 
         return response()->json($results);
