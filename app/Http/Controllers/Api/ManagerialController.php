@@ -463,14 +463,14 @@ class ManagerialController extends Controller
 
         $results = DB::table('tbl_realisasi_belanja as realisasi')
             ->selectRaw('
-                DATE(realisasi.tanggal_omspan) as date,
-                SUM(realisasi.amount) as realisasi_amount,
-                (
-                    SELECT SUM(dipa.amount)
-                    FROM tbl_dipa_belanja dipa
-                    WHERE dipa.tanggal_omspan = realisasi.tanggal_omspan
-                ) as dipa_amount
-            ')
+            DATE(realisasi.tanggal_omspan) as date,
+            SUM(realisasi.amount) as realisasi_amount,
+            (
+                SELECT SUM(dipa.amount)
+                FROM tbl_dipa_belanja dipa
+                WHERE DATE(dipa.tanggal_omspan) = DATE(realisasi.tanggal_omspan)
+            ) as dipa_amount
+        ')
             ->whereYear('realisasi.tanggal_omspan', $year)
             ->whereMonth('realisasi.tanggal_omspan', $month)
             ->groupBy(DB::raw('DATE(realisasi.tanggal_omspan)'))
