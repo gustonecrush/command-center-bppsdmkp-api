@@ -451,4 +451,29 @@ class ManagerialController extends Controller
 
         return response()->json($sorted);
     }
+
+    public function getRealisasiPerWeek(Request $request)
+    {
+        $year = $request->input('year');
+        $month = $request->input('month');
+
+        if (!$year || !$month) {
+            return response()->json(['error' => 'month and year are required'], 400);
+        }
+
+        $results = DB::table('tbl_realisasi_belanja')
+            ->selectRaw('
+                WEEK(tanggal_omspan, 1) as week_number,
+                MIN(tanggal_omspan) as start_date,
+                MAX(tanggal_omspan) as end_date,
+                SUM(amount) as total_amount
+            ')
+            ->whereYear('tanggal_omspan', $year)
+            ->whereMonth('tanggal_omspan', $month)
+            ->groupBy(DB::raw('WEEK(tanggal_omspan, 1)'))
+            ->orderBy(DB::raw('WEEK(tanggal_omspan, 1)'))
+            ->get();
+
+        return response()->json($results);
+    }
 }
