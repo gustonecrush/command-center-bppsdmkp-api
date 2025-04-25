@@ -461,20 +461,20 @@ class ManagerialController extends Controller
             return response()->json(['error' => 'month and year are required'], 400);
         }
 
-        $results = DB::table('tbl_realisasi_belanja as realisasi')
-            ->selectRaw('
-            DATE(realisasi.tanggal_omspan) as date,
-            SUM(realisasi.amount) as realisasi_amount,
-            (
-                SELECT SUM(dipa.amount)
-                FROM tbl_dipa_belanja dipa
-                WHERE DATE(dipa.tanggal_omspan) = DATE(realisasi.tanggal_omspan)
-            ) as dipa_amount
-        ')
-            ->whereYear('realisasi.tanggal_omspan', $year)
-            ->whereMonth('realisasi.tanggal_omspan', $month)
-            ->groupBy(DB::raw('DATE(realisasi.tanggal_omspan)'))
-            ->orderBy(DB::raw('DATE(realisasi.tanggal_omspan)'))
+        $results = DB::table(DB::raw('
+                (SELECT DATE(tanggal_omspan) as date, SUM(amount) as realisasi_amount
+                 FROM tbl_realisasi_belanja
+                 WHERE YEAR(tanggal_omspan) = ? AND MONTH(tanggal_omspan) = ?
+                 GROUP BY DATE(tanggal_omspan)) as realisasi
+            '))
+            ->leftJoin(DB::raw('
+                (SELECT DATE(tanggal_omspan) as date, SUM(amount) as dipa_amount
+                 FROM tbl_dipa_belanja
+                 GROUP BY DATE(tanggal_omspan)) as dipa
+            '), 'realisasi.date', '=', 'dipa.date')
+            ->select('realisasi.date', 'realisasi.realisasi_amount', DB::raw('IFNULL(dipa.dipa_amount, 0) as dipa_amount'))
+            ->orderBy('realisasi.date')
+            ->setBindings([$year, $month]) // bind the year and month to raw query
             ->get();
 
         return response()->json($results);
