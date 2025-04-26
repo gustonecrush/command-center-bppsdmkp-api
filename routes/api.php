@@ -53,6 +53,7 @@ Route::get('/anggaran/rincian-realisasi', [ManagerialController::class, 'getRinc
 Route::get('/anggaran/realisasi-sisa', [ManagerialController::class, 'getRealisasiDanSisa']);
 Route::get('/anggaran/realisasi-grouped', [ManagerialController::class, 'getRealisasiGrouped']);
 Route::get('/anggaran/realisasi-per-day', [ManagerialController::class, 'getRealisasiBelanjaPerDay']);
+Route::get('/pendapatan/realisasi-per-day', [ManagerialController::class, 'getRealisasiPendapatanPerDay']);
 
 Route::get('/pendapatan/per-satker-per-akun', [ManagerialController::class, 'getRealisasiPendapatanPerSatkerPerAkun']);
 

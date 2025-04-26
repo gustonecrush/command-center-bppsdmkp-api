@@ -501,4 +501,24 @@ class ManagerialController extends Controller
 
         return response()->json(array_values($grouped));
     }
+
+    public function getRealisasiPendapatanPerDay(Request $request)
+    {
+        $year = $request->input('year');
+        $month = $request->input('month');
+
+        if (!$year || !$month) {
+            return response()->json(['error' => 'month and year are required'], 400);
+        }
+
+        $results = DB::table('tbl_realisasi_pendapatan')
+            ->selectRaw('DATE(tanggal_omspan) as date, SUM(amount) as realisasi_amount')
+            ->whereYear('tanggal_omspan', $year)
+            ->whereMonth('tanggal_omspan', $month)
+            ->groupBy(DB::raw('DATE(tanggal_omspan)'))
+            ->orderBy('date')
+            ->get();
+
+        return response()->json($results);
+    }
 }
