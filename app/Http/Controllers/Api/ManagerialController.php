@@ -303,11 +303,25 @@ class ManagerialController extends Controller
         $startDate = $tahun . '-01-01';
         $endDate = $tanggal;
 
-        // Optional: Use caching for 5 minutes to avoid repeated heavy queries
         $result = Cache::remember("realisasi_grouped:{$tahun}:{$tanggal}", 300, function () use ($startDate, $endDate) {
+            // Fetch outstanding and blokir grouped by kdsatker
+            $outstandingBlokir = DB::table('tbl_outstanding_blokir')
+                ->select('kdsatker', DB::raw('SUM(outstanding) as total_outstanding'), DB::raw('SUM(blokir) as total_blokir'))
+                ->whereDate('tanggal_omspan', '<=', $endDate)
+                ->groupBy('kdsatker')
+                ->pluck('total_outstanding', 'kdsatker')
+                ->toArray();
+
+            $blokir = DB::table('tbl_outstanding_blokir')
+                ->select('kdsatker', DB::raw('SUM(blokir) as total_blokir'))
+                ->whereDate('tanggal_omspan', '<=', $endDate)
+                ->groupBy('kdsatker')
+                ->pluck('total_blokir', 'kdsatker')
+                ->toArray();
 
             $query = "
             SELECT 
+                dipa.kdsatker,
                 dipa.kegiatan,
                 dipa.kegiatan_name,
                 dipa.output,
@@ -321,7 +335,7 @@ class ManagerialController extends Controller
             ) r ON dipa.kdsatker = r.kdsatker 
                 AND dipa.kegiatan = r.kegiatan
                 AND dipa.output = r.output
-            GROUP BY dipa.kegiatan, dipa.kegiatan_name, dipa.output, dipa.output_name
+            GROUP BY dipa.kdsatker, dipa.kegiatan, dipa.kegiatan_name, dipa.output, dipa.output_name
         ";
 
             $data = DB::select($query, [$startDate, $endDate]);
@@ -338,19 +352,28 @@ class ManagerialController extends Controller
                         'kegiatan_name' => $item->kegiatan_name,
                         'pagu' => 0,
                         'realisasi' => 0,
+                        'outstanding' => 0,
+                        'blokir' => 0,
                         'percentage' => 0,
                         'items' => []
                     ];
                 }
 
+                $outstandingAmount = $outstandingBlokir[$item->kdsatker] ?? 0;
+                $blokirAmount = $blokir[$item->kdsatker] ?? 0;
+
                 $grouped[$kegiatanKey]['pagu'] += $item->pagu;
                 $grouped[$kegiatanKey]['realisasi'] += $item->realisasi;
+                $grouped[$kegiatanKey]['outstanding'] += $outstandingAmount;
+                $grouped[$kegiatanKey]['blokir'] += $blokirAmount;
 
                 $grouped[$kegiatanKey]['items'][] = [
                     'output' => $item->output,
                     'output_name' => $item->output_name,
                     'pagu' => (float) $item->pagu,
                     'realisasi' => (float) $item->realisasi,
+                    'outstanding' => (float) $outstandingAmount,
+                    'blokir' => (float) $blokirAmount,
                     'percentage' => $item->pagu > 0 ? round(($item->realisasi / $item->pagu) * 100, 2) : 0,
                 ];
             }
@@ -358,8 +381,16 @@ class ManagerialController extends Controller
             // Final percentage calculation
             $result = [];
             foreach ($grouped as $data) {
-                $data['percentage'] = $data['pagu'] > 0 ? round(($data['realisasi'] / $data['pagu']) * 100, 2) : 0;
-                $result[] = $data;
+                $result[] = [
+                    'kegiatan' => $data['kegiatan'],
+                    'kegiatan_name' => $data['kegiatan_name'],
+                    'pagu' => $data['pagu'],
+                    'realisasi' => $data['realisasi'],
+                    'outstanding' => $data['outstanding'],
+                    'blokir' => $data['blokir'],
+                    'percentage' => $data['pagu'] > 0 ? round((($data['realisasi'] + $data['outstanding'] + $data['blokir']) / $data['pagu']) * 100, 2) : 0,
+                    'items' => $data['items']
+                ];
             }
 
             return $result;
