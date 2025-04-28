@@ -11,6 +11,51 @@ use Illuminate\Support\Facades\DB;
 
 class ManagerialController extends Controller
 {
+    // public function rekapPerSatker(Request $request)
+    // {
+    //     $tahun = $request->input('tahun', now()->year);
+    //     $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+
+    //     // Pre-aggregate DIPA to reduce row count and avoid duplication
+    //     $subqueryPagu = DB::table('tbl_dipa_belanja')
+    //         ->select('kdsatker', DB::raw('SUM(amount) as pagu'))
+    //         ->groupBy('kdsatker');
+
+    //     // Main query
+    //     $query = DB::table('tbl_realisasi_belanja as realisasi')
+    //         ->leftJoinSub($subqueryPagu, 'dipa', 'realisasi.kdsatker', '=', 'dipa.kdsatker')
+    //         ->select(
+    //             'realisasi.kdsatker',
+    //             'realisasi.nama_satker',
+    //             DB::raw('COALESCE(dipa.pagu, 0) as pagu'),
+    //             DB::raw('SUM(realisasi.amount) as realisasi'),
+    //             DB::raw("SUM(CASE WHEN realisasi.tanggal_omspan <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) as realisasi_sampai_tanggal"),
+    //             DB::raw("ROUND(
+    //             CASE 
+    //                 WHEN COALESCE(dipa.pagu, 0) > 0 
+    //                 THEN (SUM(CASE WHEN realisasi.tanggal_omspan <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) / dipa.pagu) * 100
+    //                 ELSE 0 
+    //             END, 2
+    //         ) as persen_realisasi")
+    //         )
+    //         ->whereYear('realisasi.tanggal_omspan', $tahun)
+    //         ->groupBy('realisasi.kdsatker', 'realisasi.nama_satker', 'dipa.pagu')
+    //         ->orderByRaw("
+    //         CASE
+    //             WHEN LOWER(nama_satker) LIKE '%sekretariat%' THEN 1
+    //             WHEN LOWER(nama_satker) LIKE '%pusat%' THEN 2
+    //             WHEN LOWER(nama_satker) LIKE '%politeknik%' THEN 3
+    //             WHEN LOWER(nama_satker) LIKE '%sekolah%' THEN 4
+    //             WHEN LOWER(nama_satker) LIKE '%loka%' THEN 5
+    //             ELSE 6
+    //         END, nama_satker ASC
+    //     ")
+    //         ->get();
+
+    //     return response()->json($query);
+    // }
+
+
     public function rekapPerSatker(Request $request)
     {
         $tahun = $request->input('tahun', now()->year);
@@ -21,9 +66,19 @@ class ManagerialController extends Controller
             ->select('kdsatker', DB::raw('SUM(amount) as pagu'))
             ->groupBy('kdsatker');
 
+        // Pre-aggregate Outstanding + Blokir
+        $subqueryOutstanding = DB::table('tbl_outstanding_blokir')
+            ->select(
+                'kdsatker',
+                DB::raw('SUM(outstanding) as total_outstanding'),
+                DB::raw('SUM(blokir) as total_blokir')
+            )
+            ->groupBy('kdsatker');
+
         // Main query
         $query = DB::table('tbl_realisasi_belanja as realisasi')
             ->leftJoinSub($subqueryPagu, 'dipa', 'realisasi.kdsatker', '=', 'dipa.kdsatker')
+            ->leftJoinSub($subqueryOutstanding, 'outstanding', 'realisasi.kdsatker', '=', 'outstanding.kdsatker')
             ->select(
                 'realisasi.kdsatker',
                 'realisasi.nama_satker',
@@ -36,10 +91,12 @@ class ManagerialController extends Controller
                     THEN (SUM(CASE WHEN realisasi.tanggal_omspan <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) / dipa.pagu) * 100
                     ELSE 0 
                 END, 2
-            ) as persen_realisasi")
+            ) as persen_realisasi"),
+                DB::raw('COALESCE(outstanding.total_outstanding, 0) as outstanding'),
+                DB::raw('COALESCE(outstanding.total_blokir, 0) as blokir')
             )
             ->whereYear('realisasi.tanggal_omspan', $tahun)
-            ->groupBy('realisasi.kdsatker', 'realisasi.nama_satker', 'dipa.pagu')
+            ->groupBy('realisasi.kdsatker', 'realisasi.nama_satker', 'dipa.pagu', 'outstanding.total_outstanding', 'outstanding.total_blokir')
             ->orderByRaw("
             CASE
                 WHEN LOWER(nama_satker) LIKE '%sekretariat%' THEN 1
@@ -54,6 +111,7 @@ class ManagerialController extends Controller
 
         return response()->json($query);
     }
+
 
     public function rekapPerSatkerPendapatan(Request $request)
     {
