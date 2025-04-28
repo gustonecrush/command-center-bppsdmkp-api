@@ -304,24 +304,8 @@ class ManagerialController extends Controller
         $endDate = $tanggal;
 
         $result = Cache::remember("realisasi_grouped:{$tahun}:{$tanggal}", 300, function () use ($startDate, $endDate) {
-            // Fetch outstanding and blokir grouped by kdsatker
-            $outstandingBlokir = DB::table('tbl_outstanding_blokir')
-                ->select('kdsatker', DB::raw('SUM(outstanding) as total_outstanding'), DB::raw('SUM(blokir) as total_blokir'))
-                ->whereDate('tanggal_omspan', '<=', $endDate)
-                ->groupBy('kdsatker')
-                ->pluck('total_outstanding', 'kdsatker')
-                ->toArray();
-
-            $blokir = DB::table('tbl_outstanding_blokir')
-                ->select('kdsatker', DB::raw('SUM(blokir) as total_blokir'))
-                ->whereDate('tanggal_omspan', '<=', $endDate)
-                ->groupBy('kdsatker')
-                ->pluck('total_blokir', 'kdsatker')
-                ->toArray();
-
             $query = "
             SELECT 
-                dipa.kdsatker,
                 dipa.kegiatan,
                 dipa.kegiatan_name,
                 dipa.output,
@@ -335,16 +319,21 @@ class ManagerialController extends Controller
             ) r ON dipa.kdsatker = r.kdsatker 
                 AND dipa.kegiatan = r.kegiatan
                 AND dipa.output = r.output
-            GROUP BY dipa.kdsatker, dipa.kegiatan, dipa.kegiatan_name, dipa.output, dipa.output_name
+            GROUP BY dipa.kegiatan, dipa.kegiatan_name, dipa.output, dipa.output_name
         ";
 
             $data = DB::select($query, [$startDate, $endDate]);
 
-            // Group by kegiatan
             $grouped = [];
 
             foreach ($data as $item) {
                 $kegiatanKey = $item->kegiatan;
+                $outputKey = $item->output;
+
+                // Dummy calculation for outstanding and blokir
+                // Replace with your real calculation if needed
+                $outstandingAmount = 0; // <= UPDATE this logic if needed
+                $blokirAmount = 0;       // <= UPDATE this logic if needed
 
                 if (!isset($grouped[$kegiatanKey])) {
                     $grouped[$kegiatanKey] = [
@@ -355,42 +344,52 @@ class ManagerialController extends Controller
                         'outstanding' => 0,
                         'blokir' => 0,
                         'percentage' => 0,
-                        'items' => []
+                        'items' => [],
                     ];
                 }
 
-                $outstandingAmount = $outstandingBlokir[$item->kdsatker] ?? 0;
-                $blokirAmount = $blokir[$item->kdsatker] ?? 0;
+                // Add to kegiatan totals
+                $grouped[$kegiatanKey]['pagu'] += (float) $item->pagu;
+                $grouped[$kegiatanKey]['realisasi'] += (float) $item->realisasi;
+                $grouped[$kegiatanKey]['outstanding'] += (float) $outstandingAmount;
+                $grouped[$kegiatanKey]['blokir'] += (float) $blokirAmount;
 
-                $grouped[$kegiatanKey]['pagu'] += $item->pagu;
-                $grouped[$kegiatanKey]['realisasi'] += $item->realisasi;
-                $grouped[$kegiatanKey]['outstanding'] += $outstandingAmount;
-                $grouped[$kegiatanKey]['blokir'] += $blokirAmount;
+                // Group by output inside kegiatan
+                if (!isset($grouped[$kegiatanKey]['items'][$outputKey])) {
+                    $grouped[$kegiatanKey]['items'][$outputKey] = [
+                        'output' => $item->output,
+                        'output_name' => $item->output_name,
+                        'pagu' => 0,
+                        'realisasi' => 0,
+                        'outstanding' => 0,
+                        'blokir' => 0,
+                        'percentage' => 0,
+                    ];
+                }
 
-                $grouped[$kegiatanKey]['items'][] = [
-                    'output' => $item->output,
-                    'output_name' => $item->output_name,
-                    'pagu' => (float) $item->pagu,
-                    'realisasi' => (float) $item->realisasi,
-                    'outstanding' => (float) $outstandingAmount,
-                    'blokir' => (float) $blokirAmount,
-                    'percentage' => $item->pagu > 0 ? round(($item->realisasi / $item->pagu) * 100, 2) : 0,
-                ];
+                $grouped[$kegiatanKey]['items'][$outputKey]['pagu'] += (float) $item->pagu;
+                $grouped[$kegiatanKey]['items'][$outputKey]['realisasi'] += (float) $item->realisasi;
+                $grouped[$kegiatanKey]['items'][$outputKey]['outstanding'] += (float) $outstandingAmount;
+                $grouped[$kegiatanKey]['items'][$outputKey]['blokir'] += (float) $blokirAmount;
+
+                // Update output percentage
+                $grouped[$kegiatanKey]['items'][$outputKey]['percentage'] = $grouped[$kegiatanKey]['items'][$outputKey]['pagu'] > 0
+                    ? round(($grouped[$kegiatanKey]['items'][$outputKey]['realisasi'] / $grouped[$kegiatanKey]['items'][$outputKey]['pagu']) * 100, 2)
+                    : 0;
             }
 
-            // Final percentage calculation
+            // Finalize the result
             $result = [];
             foreach ($grouped as $data) {
-                $result[] = [
-                    'kegiatan' => $data['kegiatan'],
-                    'kegiatan_name' => $data['kegiatan_name'],
-                    'pagu' => $data['pagu'],
-                    'realisasi' => $data['realisasi'],
-                    'outstanding' => $data['outstanding'],
-                    'blokir' => $data['blokir'],
-                    'percentage' => $data['pagu'] > 0 ? round((($data['realisasi'] + $data['outstanding'] + $data['blokir']) / $data['pagu']) * 100, 2) : 0,
-                    'items' => $data['items']
-                ];
+                // Calculate percentage based on total pagu
+                $data['percentage'] = $data['pagu'] > 0
+                    ? round((($data['realisasi'] + $data['outstanding'] + $data['blokir']) / $data['pagu']) * 100, 2)
+                    : 0;
+
+                // Reset items to indexed array
+                $data['items'] = array_values($data['items']);
+
+                $result[] = $data;
             }
 
             return $result;
