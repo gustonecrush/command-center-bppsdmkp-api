@@ -600,11 +600,11 @@ class ManagerialController extends Controller
         }
 
         $results = DB::table('tbl_realisasi_pendapatan')
-            ->selectRaw('kdsatker, SUM(amount) as realisasi_amount')
+            ->selectRaw('nama_satker, SUM(amount) as realisasi_amount')
             ->whereYear('tanggal_omspan', $year)
             ->whereMonth('tanggal_omspan', $month)
-            ->groupBy('kdsatker') // Group by 'kdsatker' instead of date
-            ->orderBy('kdsatker') // Optionally, you can order by kdsatker or another column
+            ->groupBy('nama_satker') // Group by 'nama_satker' instead of date
+            ->orderBy('nama_satker') // Optionally, you can order by nama_satker or another column
             ->get();
 
         return response()->json($results);
