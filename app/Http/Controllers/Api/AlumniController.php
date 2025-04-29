@@ -92,7 +92,6 @@ class AlumniController extends Controller
             ->groupBy('job_field')
             ->selectRaw('job_field, COUNT(*) as count')
             ->orderByDesc('count')
-            ->limit(5)
             ->get();
 
         // Calculate total counts
