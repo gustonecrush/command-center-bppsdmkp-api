@@ -662,4 +662,35 @@ class ManagerialController extends Controller
 
         return response()->json($result);
     }
+
+    public function getPBJGroupedByAkun()
+    {
+        $akunLabels = [
+            '52' => 'Belanja Barang dan Jasa',
+            '53' => 'Belanja Modal',
+        ];
+
+        $data = DB::table('tbl_pbj')
+            ->select(
+                DB::raw("SUBSTRING(akun, 1, 2) as akun_prefix"),
+                DB::raw("SUM(nilai_kontrak) as nilai_kontrak"),
+                DB::raw("SUM(nilai_realisasi) as nilai_realisasi")
+            )
+            ->groupBy(DB::raw("SUBSTRING(akun, 1, 2)"))
+            ->get()
+            ->map(function ($item) use ($akunLabels) {
+                $persentasi = $item->nilai_kontrak > 0
+                    ? ($item->nilai_realisasi / $item->nilai_kontrak) * 100
+                    : 0;
+
+                return [
+                    'uraian' => $akunLabels[$item->akun_prefix] ?? 'Lainnya',
+                    'nilai_kontrak' => (float) $item->nilai_kontrak,
+                    'nilai_realisasi' => (float) $item->nilai_realisasi,
+                    'persentasi' => round($persentasi, 2),
+                ];
+            });
+
+        return response()->json($data);
+    }
 }
