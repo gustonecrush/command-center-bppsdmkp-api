@@ -30,7 +30,7 @@ Route::get('/pendidiks', [PendidikController::class, 'index']);
 Route::get('/pendidiks/summary', [PendidikController::class, 'summary']);
 
 Route::get('/tenaga-kependidikans', [TenagaKependidikanController::class, 'index']);
-Route::get('/pendidiktenaga-kependidikanss/summary', [TenagaKependidikanController::class, 'summary']);
+Route::get('/tenaga-kependidikans/summary', [TenagaKependidikanController::class, 'summary']);
 
 
 Route::get('/peserta-didiks', [PesertaDidikController::class, 'index']);
