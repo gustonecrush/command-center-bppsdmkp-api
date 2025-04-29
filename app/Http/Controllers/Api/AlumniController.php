@@ -28,7 +28,22 @@ class AlumniController extends Controller
         $satdik_id = $request->query('satdik_id');
 
         // Base query for the Alumni model
+        $tingkatPendidikan = $request->query('tingkatPendidikan');
+
         $query = Alumni::query();
+
+        $query->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+            $q->join('satuan_pendidikan as sp', 'alumnis.satdik_id', '=', 'sp.RowID');
+
+            if ($tingkatPendidikan === 'SUPM') {
+                $q->where('sp.nama', 'LIKE', '%Sekolah%');
+            } elseif ($tingkatPendidikan === 'Politeknik') {
+                $q->where(function ($q2) {
+                    $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                        ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                });
+            }
+        });
 
         // Apply the satdik_id filter if provided
         if ($satdik_id) {
@@ -94,6 +109,23 @@ class AlumniController extends Controller
             ->orderByDesc('count')
             ->get();
 
+        $nama_satdik_count = Alumni::join('satuan_pendidikan as sp', 'alumnis.satdik_id', '=', 'sp.RowID')
+            ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+                if ($tingkatPendidikan === 'SUPM') {
+                    $q->where('sp.nama', 'LIKE', '%Sekolah%');
+                } elseif ($tingkatPendidikan === 'Politeknik') {
+                    $q->where(function ($q2) {
+                        $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                    });
+                }
+            })
+            ->selectRaw('sp.nama as nama_satdik, COUNT(*) as count')
+            ->groupBy('sp.nama')
+            ->orderByDesc('count')
+            ->get();
+
+
         // Calculate total counts
         $total_absorption_count = $absorption_counts->sum('count');
         $total_study_program_count = $study_program_count->sum('count');
@@ -124,7 +156,8 @@ class AlumniController extends Controller
             'alumni_per_year_count' => $alumni_per_year_counts,
             'total_alumni_per_year_count' => $total_alumni_per_year_count,
             'top_job_fields' => $top_job_fields,
-            'total_top_job_fields_count' => $total_top_job_fields_count
+            'total_top_job_fields_count' => $total_top_job_fields_count,
+            'nama_satdik_count' => $nama_satdik_count,
         ];
 
         // Return a JSON response
