@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\PendidikController;
 use App\Http\Controllers\Api\PentaruController;
 use App\Http\Controllers\Api\PesertaDidikController;
 use App\Http\Controllers\Api\SatuanPendidikanController;
+use App\Http\Controllers\Api\TenagaKependidikanController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::get('/pendidiks', [PendidikController::class, 'index']);
 Route::get('/pendidiks/summary', [PendidikController::class, 'summary']);
+
+Route::get('/tenaga-kependidikans', [TenagaKependidikanController::class, 'index']);
+Route::get('/pendidiktenaga-kependidikanss/summary', [TenagaKependidikanController::class, 'summary']);
 
 
 Route::get('/peserta-didiks', [PesertaDidikController::class, 'index']);
