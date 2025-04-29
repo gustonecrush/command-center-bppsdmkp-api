@@ -104,11 +104,30 @@ class PendidikController extends Controller
             ->selectRaw('status_sertifikasi, COUNT(*) as count')
             ->get();
 
+        $status_aktif_counts = $query->clone()
+            ->select('aktif')
+            ->groupBy('aktif')
+            ->selectRaw('aktif, COUNT(*) as count')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'status_aktif' => match ($item->aktif) {
+                        'Y' => 'Aktif',
+                        'N' => 'Tidak Aktif',
+                        default => 'Tidak diketahui',
+                    },
+                    'count' => $item->count,
+                ];
+            });
+
+
         // Calculate total counts
         $total_golongan_count = $golongan_counts->sum('count');
         $total_program_studi_count = $program_studi_counts->sum('count');
         $total_jabatan_count = $jabatan_counts->sum('count');
         $total_status_sertifikasi_count = $status_sertifikasi_counts->sum('count');
+
+        $total_status_aktif_count = $status_aktif_counts->sum('count');
 
         // Prepare the data with totals
         $data = [
@@ -120,6 +139,8 @@ class PendidikController extends Controller
             'total_jabatan_count' => $total_jabatan_count,
             'status_sertifikasi_count' => $status_sertifikasi_counts,
             'total_status_sertifikasi_count' => $total_status_sertifikasi_count,
+            'status_aktif_count' => $status_aktif_counts,
+            'total_status_aktif_count' => $total_status_aktif_count,
         ];
 
         // Return a JSON response

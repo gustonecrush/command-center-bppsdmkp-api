@@ -26,10 +26,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::get('/pendidiks', [PendidikController::class, 'index']);
+Route::get('/pendidiks/summary', [PendidikController::class, 'summary']);
+
 
 Route::get('/peserta-didiks', [PesertaDidikController::class, 'index']);
 Route::get('/alumnis', [AlumniController::class, 'index']);
-Route::get('/pendidiks/summary', [PendidikController::class, 'summary']);
 Route::get('/alumnis/summary', [AlumniController::class, 'summary']);
 Route::get('/peserta-didiks/summary', [PesertaDidikController::class, 'summary']);
 
