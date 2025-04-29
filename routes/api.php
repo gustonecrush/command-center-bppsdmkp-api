@@ -67,4 +67,4 @@ Route::delete('/backup/{kode_akses}', [BackupController::class, 'destroyByKodeAk
 
 Route::get('/pbj/getAllDataPbj', [ManagerialController::class, 'getAllDataPbj']);
 Route::get('/pbj/getGroupedPbjBySatker', [ManagerialController::class, 'getGroupedPbjBySatker']);
-Route::get('/pbj/getGroupedPbjBySatker', [ManagerialController::class, 'getGroupedPbjBySatker']);
+Route::get('/pbj/getPBJGroupedByAkun', [ManagerialController::class, 'getPBJGroupedByAkun']);
