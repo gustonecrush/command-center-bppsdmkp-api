@@ -72,54 +72,47 @@ class PendidikController extends Controller
 
         $query = Pendidik::query();
 
-        // Apply `satdik_id` filter if provided
-        if ($satdik_id) {
-            $query->where('satdik_id', $satdik_id);
-        }
-
-        // Join satuan_pendidikan if tingkatPendidikan filter is used
-        if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
-            $query->join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID');
+        $query->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+            $q->join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID');
 
             if ($tingkatPendidikan === 'SUPM') {
-                $query->where('sp.nama', 'LIKE', '%Sekolah%');
+                $q->where('sp.nama', 'LIKE', '%Sekolah%');
             } elseif ($tingkatPendidikan === 'Politeknik') {
-                $query->where(function ($q) {
-                    $q->where('sp.nama', 'LIKE', '%Politeknik%')
+                $q->where(function ($q2) {
+                    $q2->where('sp.nama', 'LIKE', '%Politeknik%')
                         ->orWhere('sp.nama', 'LIKE', '%Akademi%');
                 });
             }
+        });
+
+        if ($satdik_id) {
+            $query->where('pendidiks.satdik_id', $satdik_id);
         }
 
-        // Group and count fields
+        // Copy the filtered base query for each summary
         $golongan_counts = $query->clone()
-            ->select('golongan')
-            ->groupBy('golongan')
             ->selectRaw('golongan, COUNT(*) as count')
+            ->groupBy('golongan')
             ->get();
 
         $program_studi_counts = $query->clone()
-            ->select('program_studi')
-            ->groupBy('program_studi')
             ->selectRaw('program_studi, COUNT(*) as count')
+            ->groupBy('program_studi')
             ->get();
 
         $jabatan_counts = $query->clone()
-            ->select('jabatan')
-            ->groupBy('jabatan')
             ->selectRaw('jabatan, COUNT(*) as count')
+            ->groupBy('jabatan')
             ->get();
 
         $status_sertifikasi_counts = $query->clone()
-            ->select('status_sertifikasi')
-            ->groupBy('status_sertifikasi')
             ->selectRaw('status_sertifikasi, COUNT(*) as count')
+            ->groupBy('status_sertifikasi')
             ->get();
 
         $status_aktif_counts = $query->clone()
-            ->select('aktif')
-            ->groupBy('aktif')
             ->selectRaw('aktif, COUNT(*) as count')
+            ->groupBy('aktif')
             ->get()
             ->map(function ($item) {
                 return [
@@ -132,8 +125,28 @@ class PendidikController extends Controller
                 ];
             });
 
-        // Totals
-        $data = [
+        // ✅ Group by satuan_pendidikan.nama if filtered
+        $nama_satdik_count = collect();
+
+        if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
+            $nama_satdik_count = Pendidik::join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID')
+                ->when($tingkatPendidikan === 'SUPM', fn($q) => $q->where('sp.nama', 'LIKE', '%Sekolah%'))
+                ->when(
+                    $tingkatPendidikan === 'Politeknik',
+                    fn($q) =>
+                    $q->where(
+                        fn($q2) =>
+                        $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                    )
+                )
+                ->selectRaw('sp.nama as nama_satdik, COUNT(*) as count')
+                ->groupBy('sp.nama')
+                ->orderByDesc('count')
+                ->get();
+        }
+
+        return response()->json([
             'golongan_count' => $golongan_counts,
             'total_golongan_count' => $golongan_counts->sum('count'),
             'program_studi_count' => $program_studi_counts,
@@ -144,8 +157,7 @@ class PendidikController extends Controller
             'total_status_sertifikasi_count' => $status_sertifikasi_counts->sum('count'),
             'status_aktif_count' => $status_aktif_counts,
             'total_status_aktif_count' => $status_aktif_counts->sum('count'),
-        ];
-
-        return response()->json($data);
+            'nama_satdik_count' => $nama_satdik_count,
+        ]);
     }
 }
