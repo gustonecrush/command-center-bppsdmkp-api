@@ -104,6 +104,10 @@ class PendidikController extends Controller
             ->selectRaw('jabatan, COUNT(*) as count')
             ->groupBy('jabatan')
             ->get();
+        $gender_counts = $query->clone()
+            ->selectRaw('gender, COUNT(*) as count')
+            ->groupBy('gender')
+            ->get();
 
         $status_sertifikasi_counts = $query->clone()
             ->selectRaw('status_sertifikasi, COUNT(*) as count')
@@ -152,6 +156,7 @@ class PendidikController extends Controller
             'status_sertifikasi_count' => $status_sertifikasi_counts,
             'total_status_sertifikasi_count' => $status_sertifikasi_counts->sum('count'),
             'status_aktif_count' => $status_aktif_counts,
+            'gender_count' => $gender_counts,
             'total_status_aktif_count' => $status_aktif_counts->sum('count'),
             'nama_satdik_count' => $nama_satdik_count,
         ]);
