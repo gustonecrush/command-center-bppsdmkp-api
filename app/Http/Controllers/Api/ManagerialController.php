@@ -707,4 +707,52 @@ class ManagerialController extends Controller
 
         return response()->json($data);
     }
+
+    public function getSummaryChartKS()
+    {
+        $summary = [
+            'substansi' => DB::table('tbl_kerjasama')
+                ->select('Substansi', DB::raw('COUNT(*) as total'))
+                ->groupBy('Substansi')
+                ->orderByDesc('total')
+                ->get()
+                ->mapWithKeys(fn($item) => [$item->Substansi ?? 'Tidak Diisi' => $item->total]),
+
+            'lingkup' => DB::table('tbl_kerjasama')
+                ->select('Lingkup', DB::raw('COUNT(*) as total'))
+                ->groupBy('Lingkup')
+                ->orderByDesc('total')
+                ->get()
+                ->mapWithKeys(fn($item) => [$item->Lingkup ?? 'Tidak Diisi' => $item->total]),
+
+            'pemrakarsa' => DB::table('tbl_kerjasama')
+                ->select('Pemrakarsa', DB::raw('COUNT(*) as total'))
+                ->groupBy('Pemrakarsa')
+                ->orderByDesc('total')
+                ->get()
+                ->mapWithKeys(fn($item) => [$item->Pemrakarsa ?? 'Tidak Diisi' => $item->total]),
+
+            'jenis_dokumen' => DB::table('tbl_kerjasama')
+                ->select('Jenis_Dokumen', DB::raw('COUNT(*) as total'))
+                ->groupBy('Jenis_Dokumen')
+                ->orderByDesc('total')
+                ->get()
+                ->mapWithKeys(fn($item) => [$item->Jenis_Dokumen ?? 'Tidak Diisi' => $item->total]),
+
+            'tingkatan' => DB::table('tbl_kerjasama')
+                ->select('Tingkatan', DB::raw('COUNT(*) as total'))
+                ->groupBy('Tingkatan')
+                ->orderByDesc('total')
+                ->get()
+                ->mapWithKeys(fn($item) => [$item->Tingkatan ?? 'Tidak Diisi' => $item->total]),
+        ];
+
+        return response()->json($summary);
+    }
+
+    public function getRincianDataKS()
+    {
+        $data = DB::table('tbl_kerjasama')->get();
+        return response()->json($data);
+    }
 }
