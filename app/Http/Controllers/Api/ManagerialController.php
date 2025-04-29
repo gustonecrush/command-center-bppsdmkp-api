@@ -641,12 +641,19 @@ class ManagerialController extends Controller
                 'nama_satker',
                 DB::raw('SUM(nilai_kontrak) as nilai_kontrak'),
                 DB::raw('SUM(nilai_realisasi) as nilai_realisasi'),
+                DB::raw('SUM(nilai_sisa) as nilai_outstanding'),
                 DB::raw('
                 CASE 
                     WHEN SUM(nilai_kontrak) > 0 THEN ROUND((SUM(nilai_realisasi) / SUM(nilai_kontrak)) * 100, 2)
                     ELSE 0
                 END as persentasi
-            ')
+            '),
+                DB::raw('
+            CASE 
+                WHEN SUM(nilai_sisa) > 0 THEN ROUND((SUM(nilai_sisa) / SUM(nilai_kontrak)) * 100, 2)
+                ELSE 0
+            END as persentasi_outstanding
+        '),
             )
             ->groupBy('nama_satker');
 
@@ -674,20 +681,27 @@ class ManagerialController extends Controller
             ->select(
                 DB::raw("SUBSTRING(akun, 1, 2) as akun_prefix"),
                 DB::raw("SUM(nilai_kontrak) as nilai_kontrak"),
-                DB::raw("SUM(nilai_realisasi) as nilai_realisasi")
+                DB::raw("SUM(nilai_realisasi) as nilai_realisasi"),
+                DB::raw("SUM(nilai_sisa) as nilai_outstanding")
             )
             ->groupBy(DB::raw("SUBSTRING(akun, 1, 2)"))
             ->get()
             ->map(function ($item) use ($akunLabels) {
-                $persentasi = $item->nilai_kontrak > 0
+                $persentasiRealisasi = $item->nilai_kontrak > 0
                     ? ($item->nilai_realisasi / $item->nilai_kontrak) * 100
+                    : 0;
+
+                $persentasiOutstanding = $item->nilai_kontrak > 0
+                    ? ($item->nilai_outstanding / $item->nilai_kontrak) * 100
                     : 0;
 
                 return [
                     'uraian' => $akunLabels[$item->akun_prefix] ?? 'Lainnya',
                     'nilai_kontrak' => (float) $item->nilai_kontrak,
                     'nilai_realisasi' => (float) $item->nilai_realisasi,
-                    'persentasi' => round($persentasi, 2),
+                    'nilai_outstanding' => (float) $item->nilai_outstanding,
+                    'persentasi' => round($persentasiRealisasi, 2),
+                    'persentasi_outstanding' => round($persentasiOutstanding, 2),
                 ];
             });
 
