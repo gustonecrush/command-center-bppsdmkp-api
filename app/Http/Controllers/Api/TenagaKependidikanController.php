@@ -87,7 +87,7 @@ class TenagaKependidikanController extends Controller
 
         $golongan_counts = (clone $query)->selectRaw('golongan, COUNT(*) as count')->groupBy('golongan')->get();
 
-        $jabatan_counts = (clone $query)->selectRaw('jabatan, COUNT(*) as count')->groupBy('jabatan')->get();
+        $jabatan_counts = (clone $query)->selectRaw('jabatan, COUNT(*) as count')->groupBy('jabatan')->orderByDesc('count')->get();
 
         $gender_counts = (clone $query)->selectRaw('jenis_kelamin as gender, COUNT(*) as count')->groupBy('jenis_kelamin')->get();
 
