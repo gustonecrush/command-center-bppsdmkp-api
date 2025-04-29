@@ -611,8 +611,23 @@ class ManagerialController extends Controller
         return response()->json($results);
     }
 
-    public function getAllDataPbj()
+    public function getAllDataPbj(Request $request)
     {
-        return response()->json(TblPbj::all());
+        $tanggal = $request->query('tanggal'); // Example: '2025-04-29'
+        $tahun = $request->query('tahun');     // Example: '2025'
+
+        $query = TblPbj::query();
+
+        if ($tanggal) {
+            $query->whereDate('tgl_kontrak', $tanggal);
+        }
+
+        if ($tahun) {
+            $query->whereYear('tgl_kontrak', $tahun);
+        }
+
+        $data = $query->get();
+
+        return response()->json($data);
     }
 }
