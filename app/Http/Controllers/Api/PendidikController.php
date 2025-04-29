@@ -80,7 +80,7 @@ class PendidikController extends Controller
             } elseif ($tingkatPendidikan === 'Politeknik') {
                 $q->where(function ($q2) {
                     $q2->where('sp.nama', 'LIKE', '%Politeknik%')
-                        ->orWhere('sp.nama', 'LIKE', '%Akademi%');
+                        ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
                 });
             }
         });
@@ -132,7 +132,7 @@ class PendidikController extends Controller
                 } elseif ($tingkatPendidikan === 'Politeknik') {
                     $q->where(function ($q2) {
                         $q2->where('sp.nama', 'LIKE', '%Politeknik%')
-                            ->orWhere('sp.nama', 'LIKE', '%Akademi%');
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
                     });
                 }
             })
