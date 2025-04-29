@@ -125,26 +125,22 @@ class PendidikController extends Controller
                 ];
             });
 
-        // ✅ Group by satuan_pendidikan.nama if filtered
-        $nama_satdik_count = collect();
-
-        if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
-            $nama_satdik_count = Pendidik::join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID')
-                ->when($tingkatPendidikan === 'SUPM', fn($q) => $q->where('sp.nama', 'LIKE', '%Sekolah%'))
-                ->when(
-                    $tingkatPendidikan === 'Politeknik',
-                    fn($q) =>
-                    $q->where(
-                        fn($q2) =>
+        $nama_satdik_count = Pendidik::join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID')
+            ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+                if ($tingkatPendidikan === 'SUPM') {
+                    $q->where('sp.nama', 'LIKE', '%Sekolah%');
+                } elseif ($tingkatPendidikan === 'Politeknik') {
+                    $q->where(function ($q2) {
                         $q2->where('sp.nama', 'LIKE', '%Politeknik%')
-                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
-                    )
-                )
-                ->selectRaw('sp.nama as nama_satdik, COUNT(*) as count')
-                ->groupBy('sp.nama')
-                ->orderByDesc('count')
-                ->get();
-        }
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%');
+                    });
+                }
+            })
+            ->selectRaw('sp.nama as nama_satdik, COUNT(*) as count')
+            ->groupBy('sp.nama')
+            ->orderByDesc('count')
+            ->get();
+
 
         return response()->json([
             'golongan_count' => $golongan_counts,
