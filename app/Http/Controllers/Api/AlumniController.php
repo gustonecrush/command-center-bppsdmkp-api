@@ -10,17 +10,32 @@ class AlumniController extends Controller
 {
     public function index(Request $request)
     {
-        // Retrieve the satdik_id query parameter
         $satdikId = $request->query('satdik_id');
+        $tingkatPendidikan = $request->query('tingkatPendidikan');
 
-        // Query the alumni based on the provided satdik_id
-        $alumni = Alumni::when($satdikId, function ($query) use ($satdikId) {
-            return $query->where('satdik_id', $satdikId);
-        })->get();
+        $alumni = Alumni::query()
+            ->when($satdikId, function ($query) use ($satdikId) {
+                return $query->where('satdik_id', $satdikId);
+            })
+            ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+                $q->join('satuan_pendidikan as sp', 'alumnis.satdik_id', '=', 'sp.RowID');
 
-        // Return the alumni records as a JSON response
+                if ($tingkatPendidikan === 'SUPM') {
+                    $q->where('sp.nama', 'LIKE', '%Sekolah%');
+                } elseif ($tingkatPendidikan === 'Politeknik') {
+                    $q->where(function ($q2) {
+                        $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                            ->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                    });
+                }
+            })
+            ->select('alumnis.*') // to avoid column ambiguity when joining
+            ->get();
+
         return response()->json($alumni);
     }
+
 
     public function summary(Request $request)
     {
