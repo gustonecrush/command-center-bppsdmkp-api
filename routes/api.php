@@ -64,3 +64,5 @@ Route::get('/verify/{kode_akses}', [BackupController::class, 'verify']);
 Route::get('/backup/{kode_akses}', [BackupController::class, 'getBackup']);
 Route::post('/backup', [BackupController::class, 'storeOrUpdate']);
 Route::delete('/backup/{kode_akses}', [BackupController::class, 'destroyByKodeAkses']);
+
+Route::get('/pbj/getAllDataPbj', [ManagerialController::class, 'getAllDataPbj']);

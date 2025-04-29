@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\TblPbj;
 use App\Models\TblRealisasiBelanja;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -608,5 +609,10 @@ class ManagerialController extends Controller
             ->get();
 
         return response()->json($results);
+    }
+
+    public function getAllDataPbj()
+    {
+        return response()->json(TblPbj::all());
     }
 }
