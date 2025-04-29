@@ -630,4 +630,36 @@ class ManagerialController extends Controller
 
         return response()->json($data);
     }
+
+    public function getGroupedPbjBySatker(Request $request)
+    {
+        $tahun = $request->input('tahun');
+        $tanggal = $request->input('tanggal');
+
+        $query = DB::table('tbl_pbj')
+            ->select(
+                'nama_satker',
+                DB::raw('SUM(nilai_kontrak) as nilai_kontrak'),
+                DB::raw('SUM(nilai_realisasi) as nilai_realisasi'),
+                DB::raw('
+                CASE 
+                    WHEN SUM(nilai_kontrak) > 0 THEN ROUND((SUM(nilai_realisasi) / SUM(nilai_kontrak)) * 100, 2)
+                    ELSE 0
+                END as persentasi
+            ')
+            )
+            ->groupBy('nama_satker');
+
+        if ($tahun) {
+            $query->whereYear('tgl_kontrak', $tahun);
+        }
+
+        if ($tanggal) {
+            $query->whereDate('tgl_kontrak', $tanggal);
+        }
+
+        $result = $query->get();
+
+        return response()->json($result);
+    }
 }
