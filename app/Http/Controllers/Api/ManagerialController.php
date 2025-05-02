@@ -140,13 +140,14 @@ class ManagerialController extends Controller
     {
         $tahun = $request->input('tahun', now()->year);
         $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+        $type = $request->input('type');
 
-        // Pre-aggregate DIPA Pendapatan to reduce row count and avoid duplication
+        // Pre-aggregate DIPA Pendapatan
         $subqueryPagu = DB::table('tbl_dipa_pendapatan')
             ->select('kdsatker', DB::raw('SUM(amount) as pagu'))
             ->groupBy('kdsatker');
 
-        // Main query for Realisasi Pendapatan
+        // Main query
         $query = DB::table('tbl_realisasi_pendapatan as realisasi')
             ->leftJoinSub($subqueryPagu, 'dipa', 'realisasi.kdsatker', '=', 'dipa.kdsatker')
             ->select(
@@ -163,7 +164,21 @@ class ManagerialController extends Controller
                 END, 2
             ) as persen_realisasi")
             )
-            ->whereYear('realisasi.tanggal_omspan', $tahun)
+            ->whereYear('realisasi.tanggal_omspan', $tahun);
+
+        // Add optional filtering by type
+        if ($type === 'Pendidikan') {
+            $query->where(function ($q) {
+                $q->where('realisasi.nama_satker', 'like', '%Pendidikan%')
+                    ->orWhere('realisasi.nama_satker', 'like', '%Politeknik%')
+                    ->orWhere('realisasi.nama_satker', 'like', '%Akademi%')
+                    ->orWhere('realisasi.nama_satker', 'like', '%Sekolah%');
+            });
+        } elseif ($type === 'Pelatihan') {
+            $query->where('realisasi.nama_satker', 'like', '%Pelatihan%');
+        }
+
+        $query = $query
             ->groupBy('realisasi.kdsatker', 'realisasi.nama_satker', 'dipa.pagu')
             ->orderByRaw("
             CASE
@@ -179,6 +194,7 @@ class ManagerialController extends Controller
 
         return response()->json($query);
     }
+
 
 
 
