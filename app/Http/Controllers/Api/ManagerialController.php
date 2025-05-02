@@ -61,6 +61,7 @@ class ManagerialController extends Controller
     {
         $tahun = $request->input('tahun', now()->year);
         $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+        $type = $request->input('type'); // optional parameter
 
         // Pre-aggregate DIPA to reduce row count and avoid duplication
         $subqueryPagu = DB::table('tbl_dipa_belanja')
@@ -87,30 +88,51 @@ class ManagerialController extends Controller
                 DB::raw('SUM(realisasi.amount) as realisasi'),
                 DB::raw("SUM(CASE WHEN realisasi.tanggal_omspan <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) as realisasi_sampai_tanggal"),
                 DB::raw("ROUND(
-                CASE 
-                    WHEN COALESCE(dipa.pagu, 0) > 0 
-                    THEN (SUM(CASE WHEN realisasi.tanggal_omspan <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) / dipa.pagu) * 100
-                    ELSE 0 
-                END, 2
-            ) as persen_realisasi"),
+                    CASE 
+                        WHEN COALESCE(dipa.pagu, 0) > 0 
+                        THEN (SUM(CASE WHEN realisasi.tanggal_omspan <= '{$tanggal}' THEN realisasi.amount ELSE 0 END) / dipa.pagu) * 100
+                        ELSE 0 
+                    END, 2
+                ) as persen_realisasi"),
                 DB::raw('COALESCE(outstanding.total_outstanding, 0) as outstanding'),
                 DB::raw('COALESCE(outstanding.total_blokir, 0) as blokir')
             )
-            ->whereYear('realisasi.tanggal_omspan', $tahun)
-            ->groupBy('realisasi.kdsatker', 'realisasi.nama_satker', 'dipa.pagu', 'outstanding.total_outstanding', 'outstanding.total_blokir')
-            ->orderByRaw("
-            CASE
-                WHEN LOWER(nama_satker) LIKE '%sekretariat%' THEN 1
-                WHEN LOWER(nama_satker) LIKE '%pusat%' THEN 2
-                WHEN LOWER(nama_satker) LIKE '%politeknik%' THEN 3
-                WHEN LOWER(nama_satker) LIKE '%sekolah%' THEN 4
-                WHEN LOWER(nama_satker) LIKE '%loka%' THEN 5
-                ELSE 6
-            END, nama_satker ASC
-        ")
-            ->get();
+            ->whereYear('realisasi.tanggal_omspan', $tahun);
 
-        return response()->json($query);
+        // Optional filter based on type
+        if ($type === 'Pendidikan') {
+            $query->where(function ($q) {
+                $q->where('realisasi.nama_satker', 'like', '%Pendidikan%')
+                    ->orWhere('realisasi.nama_satker', 'like', '%Politeknik%')
+                    ->orWhere('realisasi.nama_satker', 'like', '%Akademi%')
+                    ->orWhere('realisasi.nama_satker', 'like', '%Sekolah%');
+            });
+        } elseif ($type === 'Pelatihan') {
+            $query->where('realisasi.nama_satker', 'like', '%Pelatihan%');
+        }
+
+        // Grouping and ordering
+        $query->groupBy(
+            'realisasi.kdsatker',
+            'realisasi.nama_satker',
+            'dipa.pagu',
+            'outstanding.total_outstanding',
+            'outstanding.total_blokir'
+        )
+            ->orderByRaw("
+                CASE
+                    WHEN LOWER(nama_satker) LIKE '%sekretariat%' THEN 1
+                    WHEN LOWER(nama_satker) LIKE '%pusat%' THEN 2
+                    WHEN LOWER(nama_satker) LIKE '%politeknik%' THEN 3
+                    WHEN LOWER(nama_satker) LIKE '%sekolah%' THEN 4
+                    WHEN LOWER(nama_satker) LIKE '%loka%' THEN 5
+                    ELSE 6
+                END, nama_satker ASC
+            ");
+
+        $result = $query->get();
+
+        return response()->json($result);
     }
 
 
