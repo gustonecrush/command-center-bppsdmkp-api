@@ -70,12 +70,14 @@ class AlumniController extends Controller
             ->select('absorption')
             ->groupBy('absorption')
             ->selectRaw('absorption, COUNT(*) as count')
+            ->orderByDesc('count')
             ->get();
 
         $company_country_counts = $query->clone()
             ->select('company_country')
             ->groupBy('company_country')
             ->selectRaw('company_country, COUNT(*) as count')
+            ->orderByDesc('count')
             ->get();
 
         $study_program_count = $query->clone()
@@ -83,12 +85,14 @@ class AlumniController extends Controller
             ->select('study_program')
             ->groupBy('study_program')
             ->selectRaw('study_program, COUNT(*) as count')
+            ->orderByDesc('count')
             ->get();
 
         $work_status_counts = $query->clone()
             ->select('work_status')
             ->groupBy('work_status')
             ->selectRaw('work_status, COUNT(*) as count')
+            ->orderByDesc('count')
             ->get();
 
 
@@ -96,12 +100,14 @@ class AlumniController extends Controller
             ->select('income_range')
             ->groupBy('income_range')
             ->selectRaw('income_range, COUNT(*) as count')
+            ->orderByDesc('count')
             ->get();
 
         $gender_counts = $query->clone()
             ->select('gender')
             ->groupBy('gender')
             ->selectRaw('gender, COUNT(*) as count')
+            ->orderByDesc('count')
             ->get();
 
         $employment_by_year_counts = $query->clone()
@@ -109,12 +115,14 @@ class AlumniController extends Controller
             ->select('year')
             ->groupBy('year')
             ->selectRaw('year, COUNT(*) as count')
+            ->orderByDesc('count')
             ->get();
 
         $alumni_per_year_counts = $query->clone()
             ->select('year')
             ->groupBy('year')
             ->selectRaw('year, COUNT(*) as count')
+            ->orderByDesc('count')
             ->get();
 
         $top_job_fields = $query->clone()

@@ -85,15 +85,15 @@ class TenagaKependidikanController extends Controller
             }
         }
 
-        $golongan_counts = (clone $query)->selectRaw('golongan, COUNT(*) as count')->groupBy('golongan')->get();
+        $golongan_counts = (clone $query)->selectRaw('golongan, COUNT(*) as count')->groupBy('golongan')->orderByDesc('count')->get();
 
         $jabatan_counts = (clone $query)->selectRaw('jabatan, COUNT(*) as count')->groupBy('jabatan')->orderByDesc('count')->get();
 
-        $gender_counts = (clone $query)->selectRaw('jenis_kelamin as gender, COUNT(*) as count')->groupBy('jenis_kelamin')->get();
+        $gender_counts = (clone $query)->selectRaw('jenis_kelamin as gender, COUNT(*) as count')->groupBy->orderByDesc('count')('jenis_kelamin')->get();
 
-        $status_jabatan_counts = (clone $query)->selectRaw('status_jabatan, COUNT(*) as count')->groupBy('status_jabatan')->get();
+        $status_jabatan_counts = (clone $query)->selectRaw('status_jabatan, COUNT(*) as count')->groupBy('status_jabatan')->orderByDesc('count')->get();
 
-        $status_aktif_counts = (clone $query)->selectRaw('aktif, COUNT(*) as count')->groupBy('aktif')->get()
+        $status_aktif_counts = (clone $query)->selectRaw('aktif, COUNT(*) as count')->groupBy('aktif')->orderByDesc('count')->get()
             ->map(function ($item) {
                 return [
                     'status_aktif' => match ($item->aktif) {

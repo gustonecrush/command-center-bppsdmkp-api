@@ -93,30 +93,36 @@ class PendidikController extends Controller
         $golongan_counts = $query->clone()
             ->selectRaw('golongan, COUNT(*) as count')
             ->groupBy('golongan')
+            ->orderByDesc('count')
             ->get();
 
         $program_studi_counts = $query->clone()
             ->selectRaw('program_studi, COUNT(*) as count')
             ->groupBy('program_studi')
+            ->orderByDesc('count')
             ->get();
 
         $jabatan_counts = $query->clone()
             ->selectRaw('jabatan, COUNT(*) as count')
             ->groupBy('jabatan')
+            ->orderByDesc('count')
             ->get();
         $gender_counts = $query->clone()
             ->selectRaw('gender, COUNT(*) as count')
             ->groupBy('gender')
+            ->orderByDesc('count')
             ->get();
 
         $status_sertifikasi_counts = $query->clone()
             ->selectRaw('status_sertifikasi, COUNT(*) as count')
             ->groupBy('status_sertifikasi')
+            ->orderByDesc('count')
             ->get();
 
         $status_aktif_counts = $query->clone()
             ->selectRaw('aktif, COUNT(*) as count')
             ->groupBy('aktif')
+            ->orderByDesc('count')
             ->get()
             ->map(function ($item) {
                 return [
