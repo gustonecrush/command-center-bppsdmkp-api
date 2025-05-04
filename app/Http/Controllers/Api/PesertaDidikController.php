@@ -30,14 +30,14 @@ class PesertaDidikController extends Controller
         $query = PesertaDidik::query();
 
         $query->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
-            $q->join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.Nama');
+            $q->join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama');
 
             if ($tingkatPendidikan === 'SUPM') {
-                $q->where('sp.Nama', 'LIKE', '%Sekolah%');
+                $q->where('sp.nama', 'LIKE', '%Sekolah%');
             } elseif ($tingkatPendidikan === 'Politeknik') {
                 $q->where(function ($q2) {
-                    $q2->where('sp.Nama', 'LIKE', '%Politeknik%')
-                        ->orWhere('sp.Nama', 'LIKE', '%Akademi%')->orWhere('sp.Nama', 'LIKE', '%Pasca%');
+                    $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                        ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
                 });
             }
         });
@@ -90,19 +90,19 @@ class PesertaDidikController extends Controller
             ->orderByDesc('count')
             ->get();
 
-        $nama_satdik_count = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.Nama')
+        $nama_satdik_count = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama')
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
                 if ($tingkatPendidikan === 'SUPM') {
-                    $q->where('sp.Nama', 'LIKE', '%Sekolah%');
+                    $q->where('sp.nama', 'LIKE', '%Sekolah%');
                 } elseif ($tingkatPendidikan === 'Politeknik') {
                     $q->where(function ($q2) {
-                        $q2->where('sp.Nama', 'LIKE', '%Politeknik%')
-                            ->orWhere('sp.Nama', 'LIKE', '%Akademi%')->orWhere('sp.Nama', 'LIKE', '%Pasca%');
+                        $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
                     });
                 }
             })
-            ->selectRaw('sp.Nama as nama_satdik, COUNT(*) as count')
-            ->groupBy('sp.Nama')
+            ->selectRaw('sp.nama as nama_satdik, COUNT(*) as count')
+            ->groupBy('sp.nama')
             ->orderByDesc('count')
             ->get();
 
