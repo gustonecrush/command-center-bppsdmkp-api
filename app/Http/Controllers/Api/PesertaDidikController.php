@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PesertaDidik;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PesertaDidikController extends Controller
 {
@@ -90,7 +91,14 @@ class PesertaDidikController extends Controller
             ->orderByDesc('count')
             ->get();
 
-        $nama_satdik_count = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama')
+        $nama_satdik_count = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama')->when($satdik_id, function ($q) use ($satdik_id) {
+            $satdikNama = DB::table('satuan_pendidikan')->where('RowID', $satdik_id)->value('nama');
+
+            // Only apply filter if nama is found
+            if ($satdikNama) {
+                $q->where('sp.nama', $satdikNama);
+            }
+        })
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
                 if ($tingkatPendidikan === 'SUPM') {
                     $q->where('sp.nama', 'LIKE', '%Sekolah%');

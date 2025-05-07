@@ -106,6 +106,9 @@ class TenagaKependidikanController extends Controller
             });
 
         $nama_satdik_count = TenagaKependidikan::join('satuan_pendidikan as sp', 'tenaga_kependidikans.satdik_id', '=', 'sp.RowID')
+            ->when($satdik_id, function ($q) use ($satdik_id) {
+                $q->where('tenaga_kependidikans.satdik_id', $satdik_id);
+            })
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
                 if ($tingkatPendidikan === 'SUPM') {
                     $q->where('sp.nama', 'LIKE', '%Sekolah%');
