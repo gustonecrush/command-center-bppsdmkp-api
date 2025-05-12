@@ -360,6 +360,7 @@ class ManagerialController extends Controller
         ) r ON dipa.kdsatker = r.kdsatker 
             AND dipa.kegiatan = r.kegiatan
             AND dipa.output = r.output
+            AND dipa.tanggal_omspan = ?
         GROUP BY dipa.kegiatan, dipa.kegiatan_name, dipa.output, dipa.output_name
     ";
 
