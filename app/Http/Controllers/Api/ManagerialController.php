@@ -232,54 +232,44 @@ class ManagerialController extends Controller
     {
         $tahun = $request->input('tahun', now()->year);
         $tanggal = $request->input('tanggal');
+
+        // Query for pagu (from tbl_dipa_belanja)
         $diparealisasiFiltered = DB::table('tbl_dipa_belanja')
-            ->where('tanggal_omspan', $tanggal);
-
-        $totalPagu = $diparealisasiFiltered->sum('amount');
-
-        $totalRealisasi = DB::table('tbl_realisasi_belanja')
             ->where('tanggal_omspan', $tanggal)
-            ->sum('amount');
-
-        $realisasiFiltered = DB::table('tbl_realisasi_belanja')
-            ->where('tanggal_omspan', $tanggal);
-
-        $akunGroups = DB::table(DB::raw("({$realisasiFiltered->toSql()}) as realisasi"))
-            ->mergeBindings($realisasiFiltered)
-            ->joinSub($diparealisasiFiltered, 'dipa', function ($join) {
-                $join->on('realisasi.kdsatker', '=', 'dipa.kdsatker')
-                    ->on('realisasi.akun', '=', 'dipa.akun');
-            })
-            ->select(
-                DB::raw("LEFT(realisasi.akun, 2) as kode_akun"),
-                DB::raw("SUM(dipa.amount) as pagu"),
-                DB::raw("SUM(realisasi.amount) as realisasi")
-            )
-            ->groupBy(DB::raw("LEFT(realisasi.akun, 2)"))
+            ->select(DB::raw("LEFT(akun, 2) as kode_akun"), DB::raw("SUM(amount) as pagu"))
+            ->groupBy(DB::raw("LEFT(akun, 2)"))
             ->get();
 
+        // Query for realisasi (from tbl_realisasi_belanja)
+        $realisasiFiltered = DB::table('tbl_realisasi_belanja')
+            ->where('tanggal_omspan', $tanggal)
+            ->select(DB::raw("LEFT(akun, 2) as kode_akun"), DB::raw("SUM(amount) as realisasi"))
+            ->groupBy(DB::raw("LEFT(akun, 2)"))
+            ->get();
 
+        // Merge pagu and realisasi data manually
+        $akunGroups = [];
 
+        foreach ($diparealisasiFiltered as $dipa) {
+            $kdAkun = $dipa->kode_akun;
+            $pagu = (float) $dipa->pagu;
+            $realisasi = 0;
 
-        // Map akun prefix to category names
-        $akunLabels = [
-            '51' => 'Belanja Pegawai',
-            '52' => 'Belanja Barang dan Jasa',
-            '53' => 'Belanja Modal',
-        ];
+            // Find corresponding realisasi
+            foreach ($realisasiFiltered as $realisasiItem) {
+                if ($realisasiItem->kode_akun == $kdAkun) {
+                    $realisasi = (float) $realisasiItem->realisasi;
+                    break;
+                }
+            }
 
-        $akun = [];
-
-        foreach ($akunGroups as $group) {
-            $kode = $group->kode_akun;
-            $pagu = (float) $group->pagu;
-            $realisasi = (float) $group->realisasi;
+            // Calculate percentages
             $persentase = $pagu > 0 ? round(($realisasi / $pagu) * 100, 2) : 0;
-
             $persentaseSisa = $pagu > 0 ? round((($pagu - $realisasi) / $pagu) * 100, 2) : 0;
 
-            $akun[] = [
-                'name' => $akunLabels[$kode] ?? 'Lainnya',
+            // Add to result array
+            $akunGroups[] = [
+                'kode_akun' => $kdAkun,
                 'pagu' => $pagu,
                 'realisasi' => $realisasi,
                 'sisa' => $pagu - $realisasi,
@@ -288,7 +278,33 @@ class ManagerialController extends Controller
             ];
         }
 
+        // Map akun prefix to category names
+        $akunLabels = [
+            '51' => 'Belanja Pegawai',
+            '52' => 'Belanja Barang dan Jasa',
+            '53' => 'Belanja Modal',
+        ];
 
+        // Prepare final response data
+        $akun = [];
+
+        foreach ($akunGroups as $group) {
+            $kode = $group['kode_akun'];
+            $akun[] = [
+                'name' => $akunLabels[$kode] ?? 'Lainnya',
+                'pagu' => $group['pagu'],
+                'realisasi' => $group['realisasi'],
+                'sisa' => $group['sisa'],
+                'persentase' => $group['persentase'],
+                'persentase_sisa' => $group['persentase_sisa'],
+            ];
+        }
+
+        // Calculate totalPagu and totalRealisasi
+        $totalPagu = $diparealisasiFiltered->sum('pagu');
+        $totalRealisasi = $realisasiFiltered->sum('realisasi');
+
+        // Return the response
         return response()->json([
             'tahun' => (int) $tahun,
             'tanggal' => $tanggal,
@@ -300,6 +316,7 @@ class ManagerialController extends Controller
             'akun' => $akun
         ]);
     }
+
 
 
     public function getRealisasiDanSisaPendapatan(Request $request): JsonResponse
