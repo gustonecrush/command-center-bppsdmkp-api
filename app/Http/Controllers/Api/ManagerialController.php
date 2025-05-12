@@ -638,7 +638,7 @@ class ManagerialController extends Controller
     {
         $year = $request->input('year');
         $month = $request->input('month');
-        $tanggal = $request->input('tanggal');
+        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
 
         if (!$year || !$month) {
             return response()->json(['error' => 'month and year are required'], 400);
@@ -799,5 +799,18 @@ class ManagerialController extends Controller
     {
         $data = DB::table('tbl_kerjasama')->get();
         return response()->json($data);
+    }
+
+    public function getDistinctTanggalOmspan(): JsonResponse
+    {
+        $tanggalList = DB::table('tbl_dipa_belanja')
+            ->select('tanggal_omspan')
+            ->distinct()
+            ->orderBy('tanggal_omspan', 'desc')
+            ->pluck('tanggal_omspan');
+
+        return response()->json([
+            'tanggal_omspan' => $tanggalList,
+        ]);
     }
 }
