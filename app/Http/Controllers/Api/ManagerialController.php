@@ -637,17 +637,15 @@ class ManagerialController extends Controller
     public function getRealisasiPendapatanPerDay(Request $request)
     {
         $year = $request->input('year');
-        $month = $request->input('month');
         $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
 
-        if (!$year || !$month) {
+        if (!$year || !$tanggal) {
             return response()->json(['error' => 'month and year are required'], 400);
         }
 
         $results = DB::table('tbl_realisasi_pendapatan')
             ->selectRaw('nama_satker, SUM(amount) as realisasi_amount')
             ->whereYear('tanggal_omspan', $year)
-            ->whereMonth('tanggal_omspan', $month)
             ->whereDate('tanggal_omspan', $tanggal)
             ->groupBy('nama_satker') // Group by 'nama_satker' instead of date
             ->orderByDesc('realisasi_amount')
