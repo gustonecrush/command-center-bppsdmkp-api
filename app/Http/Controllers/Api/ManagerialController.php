@@ -210,8 +210,8 @@ class ManagerialController extends Controller
 
         // Total realisasi until the given date and year
         $totalRealisasi = DB::table('tbl_realisasi_belanja')
-            ->whereYear('tanggal', $tahun)
-            ->whereDate('tanggal', '<=', $tanggal)
+            ->whereYear('tanggal_omspan', $tahun)
+            ->whereDate('tanggal_omspan', '<=', $tanggal)
             ->sum('amount');
 
         $sisa = $totalPagu - $totalRealisasi;
@@ -235,15 +235,15 @@ class ManagerialController extends Controller
 
         // Total realisasi until the given date and year
         $totalRealisasi = DB::table('tbl_realisasi_belanja')
-            ->whereYear('tanggal', $tahun)
-            ->whereDate('tanggal', '<=', $tanggal)
+            ->whereYear('tanggal_omspan', $tahun)
+            ->whereDate('tanggal_omspan', '<=', $tanggal)
             ->sum('amount');
 
         $sisa = $totalPagu - $totalRealisasi;
 
         $realisasiFiltered = DB::table('tbl_realisasi_belanja')
-            ->whereYear('tanggal', $tahun)
-            ->whereDate('tanggal', '<=', $tanggal);
+            ->whereYear('tanggal_omspan', $tahun)
+            ->whereDate('tanggal_omspan', '<=', $tanggal);
 
         $akunGroups = DB::table(DB::raw("({$realisasiFiltered->toSql()}) as realisasi"))
             ->mergeBindings($realisasiFiltered) // Required to bind params
@@ -312,8 +312,8 @@ class ManagerialController extends Controller
 
         // Total realisasi until the given date and year from Realisasi Pendapatan
         $totalRealisasi = DB::table('tbl_realisasi_pendapatan')
-            ->whereYear('tanggal', $tahun)
-            ->whereDate('tanggal', '<=', $tanggal)
+            ->whereYear('tanggal_omspan', $tahun)
+            ->whereDate('tanggal_omspan', '<=', $tanggal)
             ->sum('amount');
 
         // Calculate remaining amount (sisa)
@@ -354,7 +354,7 @@ class ManagerialController extends Controller
             FROM tbl_dipa_belanja dipa
             LEFT JOIN (
                 SELECT * FROM tbl_realisasi_belanja 
-                WHERE tanggal BETWEEN ? AND ?
+                WHERE tanggal_omspan BETWEEN ? AND ?
             ) r ON dipa.kdsatker = r.kdsatker 
                 AND dipa.kegiatan = r.kegiatan
                 AND dipa.output = r.output
@@ -494,10 +494,10 @@ class ManagerialController extends Controller
                 'kdsatker',
                 'nama_satker',
                 DB::raw('SUM(amount) as realisasi'),
-                DB::raw('MAX(tanggal) as tanggal_terakhir')
+                DB::raw('MAX(tanggal_omspan) as tanggal_terakhir')
             )
-            ->whereYear('tanggal', $tahun)
-            ->where('tanggal', '<=', $tanggal)
+            ->whereYear('tanggal_omspan', $tahun)
+            ->where('tanggal_omspan', '<=', $tanggal)
             ->groupBy('kdsatker', 'nama_satker')
             ->get();
 
