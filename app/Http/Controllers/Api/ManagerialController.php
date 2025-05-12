@@ -233,16 +233,16 @@ class ManagerialController extends Controller
         $tahun = $request->input('tahun', now()->year);
         $tanggal = $request->input('tanggal');
         $diparealisasiFiltered = DB::table('tbl_dipa_belanja')
-            ->whereDate('tanggal_omspan', $tanggal);
+            ->where('tanggal_omspan', $tanggal);
 
         $totalPagu = $diparealisasiFiltered->sum('amount');
 
         $totalRealisasi = DB::table('tbl_realisasi_belanja')
-            ->whereDate('tanggal_omspan', $tanggal)
+            ->where('tanggal_omspan', $tanggal)
             ->sum('amount');
 
         $realisasiFiltered = DB::table('tbl_realisasi_belanja')
-            ->whereDate('tanggal_omspan', $tanggal);
+            ->where('tanggal_omspan', $tanggal);
 
         $akunGroups = DB::table(DB::raw("({$realisasiFiltered->toSql()}) as realisasi"))
             ->mergeBindings($realisasiFiltered)
