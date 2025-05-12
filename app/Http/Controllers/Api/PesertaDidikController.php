@@ -157,6 +157,7 @@ class PesertaDidikController extends Controller
                     $query->where(function ($q) {
                         $q->where('sp.nama', 'LIKE', '%Politeknik%')
                             ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                            ->orWhere('sp.nama', 'LIKE', '%Kampus%')
                             ->orWhere('sp.nama', 'LIKE', '%Pasca%');
                     });
                 }
@@ -213,6 +214,7 @@ class PesertaDidikController extends Controller
                     $nama_satdik_query->where(function ($q) {
                         $q->where('sp.nama', 'LIKE', '%Politeknik%')
                             ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                            ->orWhere('sp.nama', 'LIKE', '%Kampus%')
                             ->orWhere('sp.nama', 'LIKE', '%Pasca%');
                     });
                 }
