@@ -366,7 +366,7 @@ class ManagerialController extends Controller
         GROUP BY dipa.kegiatan, dipa.kegiatan_name, dipa.output, dipa.output_name
     ";
 
-            $data = DB::select($query, [$tanggal]);
+            $data = DB::select($query, [$tanggal, $tanggal]);
 
             $grouped = [];
 
