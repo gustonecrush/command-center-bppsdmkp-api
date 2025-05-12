@@ -638,6 +638,7 @@ class ManagerialController extends Controller
     {
         $year = $request->input('year');
         $month = $request->input('month');
+        $tanggal = $request->input('tanggal');
 
         if (!$year || !$month) {
             return response()->json(['error' => 'month and year are required'], 400);
@@ -647,6 +648,7 @@ class ManagerialController extends Controller
             ->selectRaw('nama_satker, SUM(amount) as realisasi_amount')
             ->whereYear('tanggal_omspan', $year)
             ->whereMonth('tanggal_omspan', $month)
+            ->whereDate('tanggal_omspan', $tanggal)
             ->groupBy('nama_satker') // Group by 'nama_satker' instead of date
             ->orderByDesc('realisasi_amount')
             ->get();
