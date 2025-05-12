@@ -597,7 +597,7 @@ class ManagerialController extends Controller
             ->whereYear('tanggal_omspan', $year)
             ->whereMonth('tanggal_omspan', $month)
             ->groupBy(DB::raw('DATE(tanggal_omspan), LEFT(akun, 2)'))
-            ->orderByDesc('realisasi_amount')
+            ->orderBy('date')
             ->get();
 
         // Map results into format grouped by date with types
@@ -643,7 +643,7 @@ class ManagerialController extends Controller
             ->whereYear('tanggal_omspan', $year)
             ->whereMonth('tanggal_omspan', $month)
             ->groupBy('nama_satker') // Group by 'nama_satker' instead of date
-            ->orderBy('nama_satker') // Optionally, you can order by nama_satker or another column
+            ->orderByDesc('realisasi_amount')
             ->get();
 
         return response()->json($results);
