@@ -47,6 +47,7 @@ Route::get('/satuan-pendidikan', [SatuanPendidikanController::class, 'index']);
 
 Route::get('/rekap-per-pusat', [ManagerialController::class, 'rekapPerSatker']);
 Route::get('/tanggal-omspan', [ManagerialController::class, 'getDistinctTanggalOmspan']);
+Route::get('/tanggal-omspan-pendapatan', [ManagerialController::class, 'getDistinctTanggalOmspanPendapatan']);
 
 Route::get('/pendapatan/rekap-per-satker', [ManagerialController::class, 'rekapPerSatkerPendapatan']);
 Route::get('/pendapatan/realisasi-sisa', [ManagerialController::class, 'getRealisasiDanSisaPendapatan']);

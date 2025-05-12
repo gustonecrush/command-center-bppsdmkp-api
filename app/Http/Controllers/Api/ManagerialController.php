@@ -813,4 +813,17 @@ class ManagerialController extends Controller
             'tanggal_omspan' => $tanggalList,
         ]);
     }
+
+    public function getDistinctTanggalOmspanPendapatan(): JsonResponse
+    {
+        $tanggalList = DB::table('tbl_realisasi_pendapatan')
+            ->select('tanggal_omspan')
+            ->distinct()
+            ->orderBy('tanggal_omspan', 'desc')
+            ->pluck('tanggal_omspan');
+
+        return response()->json([
+            'tanggal_omspan' => $tanggalList,
+        ]);
+    }
 }
