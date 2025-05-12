@@ -353,14 +353,16 @@ class ManagerialController extends Controller
             dipa.output_name,
             SUM(dipa.amount) AS pagu,
             SUM(COALESCE(r.amount, 0)) AS realisasi
-        FROM tbl_dipa_belanja dipa
+        FROM (
+        SELECT * FROM tbl_dipa_belanja
+        WHERE tanggal_omspan = ?
+    ) dipa
         LEFT JOIN (
             SELECT * FROM tbl_realisasi_belanja 
             WHERE tanggal_omspan = ?
         ) r ON dipa.kdsatker = r.kdsatker 
             AND dipa.kegiatan = r.kegiatan
             AND dipa.output = r.output
-            AND dipa.tanggal_omspan = ?
         GROUP BY dipa.kegiatan, dipa.kegiatan_name, dipa.output, dipa.output_name
     ";
 
