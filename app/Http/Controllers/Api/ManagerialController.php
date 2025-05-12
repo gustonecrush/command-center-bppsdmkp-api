@@ -233,31 +233,18 @@ class ManagerialController extends Controller
         $tahun = $request->input('tahun', now()->year);
         $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
 
-        // Total pagu from DIPA
-        $totalPagu = DB::table('tbl_dipa_belanja')->whereDate('tanggal_omspan', $tanggal)->sum('amount');
-
-        // Total realisasi until the given date and year
-        $totalRealisasi = DB::table('tbl_realisasi_belanja')
-            ->whereYear('tanggal_omspan', $tahun)
-            ->whereDate('tanggal_omspan', $tanggal)
-            ->sum('amount');
-
-
         $realisasiFiltered = DB::table('tbl_realisasi_belanja')
-            ->whereYear('tanggal_omspan', $tahun)
             ->whereDate('tanggal_omspan', $tanggal);
 
         $totalPagu = DB::table('tbl_dipa_belanja')->whereDate('tanggal_omspan', $tanggal)->sum('amount');
 
         // Total realisasi until the given date and year
         $totalRealisasi = DB::table('tbl_realisasi_belanja')
-            ->whereYear('tanggal_omspan', $tahun)
             ->whereDate('tanggal_omspan', $tanggal)
             ->sum('amount');
 
 
         $realisasiFiltered = DB::table('tbl_realisasi_belanja')
-            ->whereYear('tanggal_omspan', $tahun)
             ->whereDate('tanggal_omspan', $tanggal);
 
         $akunGroups = DB::table(DB::raw("({$realisasiFiltered->toSql()}) as realisasi"))
