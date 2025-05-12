@@ -316,7 +316,7 @@ class ManagerialController extends Controller
         // Total realisasi until the given date and year from Realisasi Pendapatan
         $totalRealisasi = DB::table('tbl_realisasi_pendapatan')
             ->whereYear('tanggal_omspan', $tahun)
-            ->whereDate('tanggal_omspan', '<=', $tanggal)
+            ->whereDate('tanggal_omspan', '=', $tanggal)
             ->sum('amount');
 
         // Calculate remaining amount (sisa)
@@ -342,29 +342,28 @@ class ManagerialController extends Controller
         $tahun = $request->input('tahun', date('Y'));
         $tanggal = $request->input('tanggal', now()->toDateString());
 
-        $startDate = $tahun . '-01-01';
-        $endDate = $tanggal;
 
-        $result = Cache::remember("realisasi_grouped:{$tahun}:{$tanggal}", 300, function () use ($startDate, $endDate) {
+
+        $result = Cache::remember("realisasi_grouped:{$tahun}:{$tanggal}", 300, function () use ($tanggal) {
             $query = "
-            SELECT 
-                dipa.kegiatan,
-                dipa.kegiatan_name,
-                dipa.output,
-                dipa.output_name,
-                SUM(dipa.amount) AS pagu,
-                SUM(COALESCE(r.amount, 0)) AS realisasi
-            FROM tbl_dipa_belanja dipa
-            LEFT JOIN (
-                SELECT * FROM tbl_realisasi_belanja 
-                WHERE tanggal_omspan BETWEEN ? AND ?
-            ) r ON dipa.kdsatker = r.kdsatker 
-                AND dipa.kegiatan = r.kegiatan
-                AND dipa.output = r.output
-            GROUP BY dipa.kegiatan, dipa.kegiatan_name, dipa.output, dipa.output_name
-        ";
+        SELECT 
+            dipa.kegiatan,
+            dipa.kegiatan_name,
+            dipa.output,
+            dipa.output_name,
+            SUM(dipa.amount) AS pagu,
+            SUM(COALESCE(r.amount, 0)) AS realisasi
+        FROM tbl_dipa_belanja dipa
+        LEFT JOIN (
+            SELECT * FROM tbl_realisasi_belanja 
+            WHERE tanggal_omspan = ?
+        ) r ON dipa.kdsatker = r.kdsatker 
+            AND dipa.kegiatan = r.kegiatan
+            AND dipa.output = r.output
+        GROUP BY dipa.kegiatan, dipa.kegiatan_name, dipa.output, dipa.output_name
+    ";
 
-            $data = DB::select($query, [$startDate, $endDate]);
+            $data = DB::select($query, [$tanggal]);
 
             $grouped = [];
 
