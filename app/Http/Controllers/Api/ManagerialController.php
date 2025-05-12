@@ -231,7 +231,7 @@ class ManagerialController extends Controller
     public function getRincianRealisasiAnggaran(Request $request): JsonResponse
     {
         $tahun = $request->input('tahun', now()->year);
-        $tanggal = $request->iinput('tanggal');
+        $tanggal = $request->input('tanggal');
         $diparealisasiFiltered = DB::table('tbl_dipa_belanja')
             ->whereDate('tanggal_omspan', $tanggal);
 
