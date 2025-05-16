@@ -78,3 +78,13 @@ Route::get('/pbj/getPBJGroupedByAkun', [ManagerialController::class, 'getPBJGrou
 
 Route::get('/kerja-sama/getSummaryChartKS', [ManagerialController::class, 'getSummaryChartKS']);
 Route::get('/kerja-sama/getRincianDataKS', [ManagerialController::class, 'getRincianDataKS']);
+
+
+Route::get('publikasi', [PublikasiController::class, 'index']);             // Get all
+Route::get('publikasi/{slug}', [PublikasiController::class, 'show']);       // Get by slug
+Route::post('publikasi', [PublikasiController::class, 'store']);            // Create new
+Route::put('publikasi/{id}', [PublikasiController::class, 'update']);       // Update by ID
+
+// Update counters
+Route::patch('publikasi/{id}/access_count', [PublikasiController::class, 'updateAccessCount']);
+Route::patch('publikasi/{id}/tanggal_count', [PublikasiController::class, 'updateTanggalCount']);
