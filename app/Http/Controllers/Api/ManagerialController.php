@@ -60,7 +60,14 @@ class ManagerialController extends Controller
     public function rekapPerSatker(Request $request)
     {
         $tahun = $request->input('tahun', now()->year);
-        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+        $tanggalInput = $request->input('tanggal');
+
+        if (empty($tanggalInput)) {
+            $tanggal = DB::table('tbl_dipa_belanja')->max('tanggal_omspan');
+        } else {
+            $tanggal = \Carbon\Carbon::parse($tanggalInput)->format('Y-m-d');
+        }
+
         $type = $request->input('type'); // optional parameter
 
         // Pre-aggregate DIPA to reduce row count and avoid duplication
