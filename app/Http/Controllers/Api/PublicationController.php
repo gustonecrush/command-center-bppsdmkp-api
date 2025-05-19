@@ -34,7 +34,7 @@ class PublicationController extends Controller
         $validated = $request->validate([
             'pub_full_name' => 'required|string|max:255',
             'pub_short_name' => 'nullable|string|max:150',
-            'description' => 'nullable|text',
+            'description' => 'nullable|string',
             'subject' => 'nullable|string|max:150',
             'doc_type' => 'nullable|string|max:100',
             'pub_file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:50240', // max 10MB
