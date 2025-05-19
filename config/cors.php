@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://elaut-bppsdm.kkp.go.id', 'http://localhost', 'https://command-center-bppsdmkp.vercel.app'],
+    'allowed_origins' => ['https://elaut-bppsdm.kkp.go.id', 'http://localhost', 'https://command-center-bppsdmkp.vercel.app', 'http://localhost:6323'],
 
     'allowed_origins_patterns' => [],
 
