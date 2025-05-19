@@ -37,7 +37,7 @@ class PublicationController extends Controller
             'description' => 'nullable|string',
             'subject' => 'nullable|string|max:150',
             'doc_type' => 'nullable|string|max:100',
-            'pub_file' => 'nullable|string|max:255',
+            'pub_file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:50240', // max 10MB
             'pub_file_type' => 'nullable|string|max:50',
             'language' => 'nullable|string|max:50',
             'source' => 'nullable|string|max:255',
@@ -49,12 +49,22 @@ class PublicationController extends Controller
         while (Publication::where('slug', $slug)->exists()) {
             $slug = \Illuminate\Support\Str::slug($validated['pub_full_name']) . '-' . $count++;
         }
+
         $validated['slug'] = $slug;
+
+        // Handle file upload
+        if ($request->hasFile('pub_file')) {
+            $file = $request->file('pub_file');
+            $path = $file->store('publications', 'public'); // stored in storage/app/public/publications
+            $validated['pub_file'] = 'storage/' . $path;
+            $validated['pub_file_type'] = $file->getClientOriginalExtension(); // pdf, docx, etc
+        }
 
         $publikasi = Publication::create($validated);
 
         return response()->json($publikasi, 201);
     }
+
 
     // 3. Update publikasi by id
     public function update(Request $request, $id)
