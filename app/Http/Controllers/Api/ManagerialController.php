@@ -808,18 +808,17 @@ class ManagerialController extends Controller
 
     public function getSummaryChartKS(Request $request)
     {
-        $tahunMulai = $request->input('tahunMulai');
-        $tahunSelesai = $request->input('tahunSelesai');
+        $tahunMulai = trim($request->input('tahunMulai', ''));
+        $tahunSelesai = trim($request->input('tahunSelesai', ''));
 
-        // Shared query builder with dynamic filters
         $buildQuery = function ($column) use ($tahunMulai, $tahunSelesai) {
             $query = DB::table('tbl_kerjasama')->select($column, DB::raw('COUNT(*) as total'));
 
-            // Apply filters only if tahunMulai or tahunSelesai are not empty
-            if (!empty($tahunMulai)) {
+            if ($tahunMulai !== '') {
                 $query->whereYear('Mulai', $tahunMulai);
             }
-            if (!empty($tahunSelesai)) {
+
+            if ($tahunSelesai !== '') {
                 $query->whereYear('Selesai', $tahunSelesai);
             }
 
@@ -842,11 +841,27 @@ class ManagerialController extends Controller
     }
 
 
-    public function getRincianDataKS()
+
+    public function getRincianDataKS(Request $request)
     {
-        $data = DB::table('tbl_kerjasama')->get();
+        $tahunMulai = trim($request->input('tahunMulai', ''));
+        $tahunSelesai = trim($request->input('tahunSelesai', ''));
+
+        $query = DB::table('tbl_kerjasama');
+
+        if ($tahunMulai !== '') {
+            $query->whereYear('Mulai', '=', $tahunMulai);
+        }
+
+        if ($tahunSelesai !== '') {
+            $query->whereYear('Selesai', '=', $tahunSelesai);
+        }
+
+        $data = $query->get();
+
         return response()->json($data);
     }
+
 
     public function getDistinctTanggalOmspan(): JsonResponse
     {
