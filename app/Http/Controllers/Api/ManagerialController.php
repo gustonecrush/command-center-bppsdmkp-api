@@ -673,14 +673,14 @@ class ManagerialController extends Controller
             $tanggal = \Carbon\Carbon::parse($tanggalInput ?? now()->toDateString())->format('Y-m-d');
         }
 
-        if (!$year || !$tanggal) {
+        if (!$year) {
             return response()->json(['error' => 'year and tanggal are required'], 400);
         }
 
         $query = DB::table('tbl_realisasi_pendapatan')
             ->selectRaw('nama_satker, SUM(amount) as realisasi_amount')
             ->whereYear('tanggal_omspan', $year)
-            ->whereDate('tanggal_omspan', $tanggal);
+            ->where('tanggal_omspan', $tanggal);
 
         if ($type) {
             $query->where(function ($q) use ($type) {
@@ -706,8 +706,6 @@ class ManagerialController extends Controller
 
         return response()->json($results);
     }
-
-
 
     public function getAllDataPbj(Request $request)
     {
