@@ -815,11 +815,11 @@ class ManagerialController extends Controller
             $query = DB::table('tbl_kerjasama')->select($column, DB::raw('COUNT(*) as total'));
 
             if ($tahunMulai !== '') {
-                $query->whereYear('Mulai', $tahunMulai);
+                $query->where('Mulai', $tahunMulai);
             }
 
             if ($tahunSelesai !== '') {
-                $query->whereYear('Selesai', $tahunSelesai);
+                $query->where('Selesai', $tahunSelesai);
             }
 
             return $query
@@ -850,11 +850,11 @@ class ManagerialController extends Controller
         $query = DB::table('tbl_kerjasama');
 
         if ($tahunMulai !== '') {
-            $query->whereYear('Mulai', '=', $tahunMulai);
+            $query->where('Mulai', '=', $tahunMulai);
         }
 
         if ($tahunSelesai !== '') {
-            $query->whereYear('Selesai', '=', $tahunSelesai);
+            $query->where('Selesai', '=', $tahunSelesai);
         }
 
         $data = $query->get();
