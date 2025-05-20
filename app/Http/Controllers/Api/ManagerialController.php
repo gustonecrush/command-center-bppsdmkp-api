@@ -711,17 +711,17 @@ class ManagerialController extends Controller
 
     public function getAllDataPbj(Request $request)
     {
-        $tanggal = $request->query('tanggal'); // Example: '2025-04-29'
-        $tahun = $request->query('tahun');     // Example: '2025'
+        $tanggal = $request->query('tanggal');
+        $tahun = $request->query('tahun');
 
         $query = TblPbj::query();
 
         if ($tanggal) {
-            $query->whereDate('tgl_kontrak', $tanggal);
+            $query->where('tanggal_omspan', $tanggal);
         }
 
         if ($tahun) {
-            $query->whereYear('tgl_kontrak', $tahun);
+            $query->whereYear('tanggal_omspan', $tahun);
         }
 
         $data = $query->get();
@@ -747,41 +747,58 @@ class ManagerialController extends Controller
                 END as persentasi
             '),
                 DB::raw('
-            CASE 
-                WHEN SUM(nilai_sisa) > 0 THEN ROUND((SUM(nilai_sisa) / SUM(nilai_kontrak)) * 100, 2)
-                ELSE 0
-            END as persentasi_outstanding
-        '),
-            )
-            ->groupBy('nama_satker');
+                CASE 
+                    WHEN SUM(nilai_kontrak) > 0 THEN ROUND((SUM(nilai_sisa) / SUM(nilai_kontrak)) * 100, 2)
+                    ELSE 0
+                END as persentasi_outstanding
+            ')
+            );
 
+        // Apply filters if present
         if ($tahun) {
-            $query->whereYear('tgl_kontrak', $tahun);
+            $query->whereYear('tanggal_omspan', $tahun);
         }
 
         if ($tanggal) {
-            $query->whereDate('tgl_kontrak', $tanggal);
+            $query->where('tanggal_omspan', $tanggal);
         }
+
+        // Group after applying filters
+        $query->groupBy('nama_satker');
 
         $result = $query->get();
 
         return response()->json($result);
     }
 
-    public function getPBJGroupedByAkun()
+
+    public function getPBJGroupedByAkun(Request $request)
     {
+        $tanggal = $request->query('tanggal');
+        $tahun = $request->query('tahun');
+
         $akunLabels = [
             '52' => 'Belanja Barang dan Jasa',
             '53' => 'Belanja Modal',
         ];
 
-        $data = DB::table('tbl_pbj')
+        $query = DB::table('tbl_pbj')
             ->select(
                 DB::raw("SUBSTRING(akun, 1, 2) as akun_prefix"),
                 DB::raw("SUM(nilai_kontrak) as nilai_kontrak"),
                 DB::raw("SUM(nilai_realisasi) as nilai_realisasi"),
                 DB::raw("SUM(nilai_sisa) as nilai_outstanding")
-            )
+            );
+
+        if ($tanggal) {
+            $query->where('tanggal_omspan', $tanggal);
+        }
+
+        if ($tahun) {
+            $query->whereYear('tanggal_omspan', $tahun);
+        }
+
+        $data = $query
             ->groupBy(DB::raw("SUBSTRING(akun, 1, 2)"))
             ->get()
             ->map(function ($item) use ($akunLabels) {
@@ -805,6 +822,7 @@ class ManagerialController extends Controller
 
         return response()->json($data);
     }
+
 
     public function getSummaryChartKS(Request $request)
     {
