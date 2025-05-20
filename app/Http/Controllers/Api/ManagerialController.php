@@ -129,16 +129,7 @@ class ManagerialController extends Controller
             'outstanding.total_blokir'
         )
             ->orderByDesc('persen_realisasi')
-            ->orderByRaw("
-                CASE
-                    WHEN LOWER(nama_satker) LIKE '%sekretariat%' THEN 1
-                    WHEN LOWER(nama_satker) LIKE '%pusat%' THEN 2
-                    WHEN LOWER(nama_satker) LIKE '%politeknik%' THEN 3
-                    WHEN LOWER(nama_satker) LIKE '%sekolah%' THEN 4
-                    WHEN LOWER(nama_satker) LIKE '%loka%' THEN 5
-                    ELSE 6
-                END, nama_satker ASC
-            ");
+        ;
 
         $result = $query->get();
 
