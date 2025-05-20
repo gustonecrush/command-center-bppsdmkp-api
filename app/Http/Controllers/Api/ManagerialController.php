@@ -659,18 +659,17 @@ class ManagerialController extends Controller
     public function getRealisasiPendapatanPerDay(Request $request)
     {
         $year = $request->input('year');
+        $type = $request->input('type');
         $tanggalInput = $request->input('tanggal');
 
         // If tanggal is empty string, get the latest tanggal_omspan
         if ($tanggalInput === '') {
-            $tanggal = DB::table('tbl_realisasi_pendapatan')
-                ->max('tanggal_omspan');
+            $tanggal = DB::table('tbl_realisasi_pendapatan')->max('tanggal_omspan');
 
             if (!$tanggal) {
                 return response()->json(['error' => 'No data available to determine latest date'], 404);
             }
         } else {
-            // Use provided date or default to today
             $tanggal = \Carbon\Carbon::parse($tanggalInput ?? now()->toDateString())->format('Y-m-d');
         }
 
@@ -678,16 +677,36 @@ class ManagerialController extends Controller
             return response()->json(['error' => 'year and tanggal are required'], 400);
         }
 
-        $results = DB::table('tbl_realisasi_pendapatan')
+        $query = DB::table('tbl_realisasi_pendapatan')
             ->selectRaw('nama_satker, SUM(amount) as realisasi_amount')
             ->whereYear('tanggal_omspan', $year)
-            ->whereDate('tanggal_omspan', $tanggal)
+            ->whereDate('tanggal_omspan', $tanggal);
+
+        if ($type) {
+            $query->where(function ($q) use ($type) {
+                if ($type === 'pendidikan') {
+                    $q->where('nama_satker', 'like', '%politeknik%')
+                        ->orWhere('nama_satker', 'like', '%akademi%')
+                        ->orWhere('nama_satker', 'like', '%kampus%')
+                        ->orWhere('nama_satker', 'like', '%sekolah%');
+                } elseif ($type === 'pelatihan') {
+                    $q->where('nama_satker', 'like', '%pelatihan%');
+                } elseif ($type === 'riset') {
+                    $q->where('nama_satker', 'like', '%riset%');
+                } elseif ($type === 'penyuluhan') {
+                    $q->where('nama_satker', 'like', '%penyuluhan%');
+                }
+            });
+        }
+
+        $results = $query
             ->groupBy('nama_satker')
             ->orderByDesc('realisasi_amount')
             ->get();
 
         return response()->json($results);
     }
+
 
 
     public function getAllDataPbj(Request $request)
