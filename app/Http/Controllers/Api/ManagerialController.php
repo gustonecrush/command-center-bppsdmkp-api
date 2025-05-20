@@ -808,46 +808,39 @@ class ManagerialController extends Controller
 
     public function getSummaryChartKS(Request $request)
     {
-        $tahun = $request->input('tahun');
+        $tahunMulai = $request->input('tahunMulai');
+        $tahunSelesai = $request->input('tahunSelesai');
+
+        // Shared query builder with dynamic filters
+        $buildQuery = function ($column) use ($tahunMulai, $tahunSelesai) {
+            $query = DB::table('tbl_kerjasama')->select($column, DB::raw('COUNT(*) as total'));
+
+            // Apply filters only if tahunMulai or tahunSelesai are not empty
+            if (!empty($tahunMulai)) {
+                $query->whereYear('Mulai', $tahunMulai);
+            }
+            if (!empty($tahunSelesai)) {
+                $query->whereYear('Selesai', $tahunSelesai);
+            }
+
+            return $query
+                ->groupBy($column)
+                ->orderByDesc('total')
+                ->get()
+                ->mapWithKeys(fn($item) => [$item->$column ?? 'Tidak Diisi' => $item->total]);
+        };
+
         $summary = [
-            'substansi' => DB::table('tbl_kerjasama')
-                ->select('Substansi', DB::raw('COUNT(*) as total'))
-                ->groupBy('Substansi')
-                ->orderByDesc('total')
-                ->get()
-                ->mapWithKeys(fn($item) => [$item->Substansi ?? 'Tidak Diisi' => $item->total]),
-
-            'lingkup' => DB::table('tbl_kerjasama')
-                ->select('Lingkup', DB::raw('COUNT(*) as total'))
-                ->groupBy('Lingkup')
-                ->orderByDesc('total')
-                ->get()
-                ->mapWithKeys(fn($item) => [$item->Lingkup ?? 'Tidak Diisi' => $item->total]),
-
-            'pemrakarsa' => DB::table('tbl_kerjasama')
-                ->select('Pemrakarsa', DB::raw('COUNT(*) as total'))
-                ->groupBy('Pemrakarsa')
-                ->orderByDesc('total')
-                ->get()
-                ->mapWithKeys(fn($item) => [$item->Pemrakarsa ?? 'Tidak Diisi' => $item->total]),
-
-            'jenis_dokumen' => DB::table('tbl_kerjasama')
-                ->select('Jenis_Dokumen', DB::raw('COUNT(*) as total'))
-                ->groupBy('Jenis_Dokumen')
-                ->orderByDesc('total')
-                ->get()
-                ->mapWithKeys(fn($item) => [$item->Jenis_Dokumen ?? 'Tidak Diisi' => $item->total]),
-
-            'tingkatan' => DB::table('tbl_kerjasama')
-                ->select('Tingkatan', DB::raw('COUNT(*) as total'))
-                ->groupBy('Tingkatan')
-                ->orderByDesc('total')
-                ->get()
-                ->mapWithKeys(fn($item) => [$item->Tingkatan ?? 'Tidak Diisi' => $item->total]),
+            'substansi'     => $buildQuery('Substansi'),
+            'lingkup'       => $buildQuery('Lingkup'),
+            'pemrakarsa'    => $buildQuery('Pemrakarsa'),
+            'jenis_dokumen' => $buildQuery('Jenis_Dokumen'),
+            'tingkatan'     => $buildQuery('Tingkatan'),
         ];
 
         return response()->json($summary);
     }
+
 
     public function getRincianDataKS()
     {
