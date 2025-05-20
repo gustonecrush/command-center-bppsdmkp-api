@@ -892,6 +892,7 @@ class ManagerialController extends Controller
     {
         $tanggalList = DB::table('tbl_pbj')
             ->select('tanggal_omspan')
+            ->whereNotNull('tanggal_omspan') // exclude nulls
             ->distinct()
             ->orderBy('tanggal_omspan', 'desc')
             ->pluck('tanggal_omspan');
