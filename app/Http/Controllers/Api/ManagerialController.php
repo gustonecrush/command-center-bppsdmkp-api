@@ -659,22 +659,36 @@ class ManagerialController extends Controller
     public function getRealisasiPendapatanPerDay(Request $request)
     {
         $year = $request->input('year');
-        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+        $tanggalInput = $request->input('tanggal');
+
+        // If tanggal is empty string, get the latest tanggal_omspan
+        if ($tanggalInput === '') {
+            $tanggal = DB::table('tbl_realisasi_pendapatan')
+                ->max('tanggal_omspan');
+
+            if (!$tanggal) {
+                return response()->json(['error' => 'No data available to determine latest date'], 404);
+            }
+        } else {
+            // Use provided date or default to today
+            $tanggal = \Carbon\Carbon::parse($tanggalInput ?? now()->toDateString())->format('Y-m-d');
+        }
 
         if (!$year || !$tanggal) {
-            return response()->json(['error' => 'month and year are required'], 400);
+            return response()->json(['error' => 'year and tanggal are required'], 400);
         }
 
         $results = DB::table('tbl_realisasi_pendapatan')
             ->selectRaw('nama_satker, SUM(amount) as realisasi_amount')
             ->whereYear('tanggal_omspan', $year)
             ->whereDate('tanggal_omspan', $tanggal)
-            ->groupBy('nama_satker') // Group by 'nama_satker' instead of date
+            ->groupBy('nama_satker')
             ->orderByDesc('realisasi_amount')
             ->get();
 
         return response()->json($results);
     }
+
 
     public function getAllDataPbj(Request $request)
     {
@@ -773,8 +787,9 @@ class ManagerialController extends Controller
         return response()->json($data);
     }
 
-    public function getSummaryChartKS()
+    public function getSummaryChartKS(Request $request)
     {
+        $tahun = $request->input('tahun');
         $summary = [
             'substansi' => DB::table('tbl_kerjasama')
                 ->select('Substansi', DB::raw('COUNT(*) as total'))
