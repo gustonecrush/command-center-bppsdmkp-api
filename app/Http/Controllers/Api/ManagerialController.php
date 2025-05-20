@@ -658,7 +658,7 @@ class ManagerialController extends Controller
 
     public function getRealisasiPendapatanPerDay(Request $request)
     {
-        $year = $request->input('year');
+        $year = $request->input('tahun');
         $type = $request->input('type');
         $tanggalInput = $request->input('tanggal');
 
