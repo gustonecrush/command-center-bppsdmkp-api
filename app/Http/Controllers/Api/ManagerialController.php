@@ -128,6 +128,7 @@ class ManagerialController extends Controller
             'outstanding.total_outstanding',
             'outstanding.total_blokir'
         )
+            ->orderByDesc('persen_realisasi')
             ->orderByRaw("
                 CASE
                     WHEN LOWER(nama_satker) LIKE '%sekretariat%' THEN 1
@@ -143,7 +144,6 @@ class ManagerialController extends Controller
 
         return response()->json($result);
     }
-
 
     public function rekapPerSatkerPendapatan(Request $request)
     {
