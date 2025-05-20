@@ -663,7 +663,7 @@ class ManagerialController extends Controller
         $tanggalInput = $request->input('tanggal');
 
         // If tanggal is empty string, get the latest tanggal_omspan
-        if ($tanggalInput === '') {
+        if ($tanggalInput === 'latest') {
             $tanggal = DB::table('tbl_realisasi_pendapatan')->max('tanggal_omspan');
 
             if (!$tanggal) {
