@@ -320,7 +320,7 @@ class ManagerialController extends Controller
     public function getRealisasiDanSisaPendapatan(Request $request): JsonResponse
     {
         $tahun = $request->input('tahun', now()->year);
-        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+        $tanggal = $request->input(key: 'tanggal');
 
         // Total pagu from DIPA Pendapatan
         $totalPagu = DB::table('tbl_dipa_pendapatan')
@@ -329,7 +329,7 @@ class ManagerialController extends Controller
         // Total realisasi until the given date and year from Realisasi Pendapatan
         $totalRealisasi = DB::table('tbl_realisasi_pendapatan')
             ->whereYear('tanggal_omspan', $tahun)
-            ->whereDate('tanggal_omspan', '=', $tanggal)
+            ->where('tanggal_omspan')
             ->sum('amount');
 
         // Calculate remaining amount (sisa)
