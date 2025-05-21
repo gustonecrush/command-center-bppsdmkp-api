@@ -139,12 +139,14 @@ class ManagerialController extends Controller
     public function rekapPerSatkerPendapatan(Request $request)
     {
         $tahun = $request->input('tahun', now()->year);
-        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+        $tanggal = $request->input('tanggal');
         $type = $request->input('type');
 
         // Pre-aggregate DIPA Pendapatan
         $subqueryPagu = DB::table('tbl_dipa_pendapatan')
             ->select('kdsatker', DB::raw('SUM(amount) as pagu'))
+            ->whereYear('tanggal_omspan', $tahun)
+            ->where('tanggal_omspan', $tanggal)
             ->groupBy('kdsatker');
 
         // Main query
