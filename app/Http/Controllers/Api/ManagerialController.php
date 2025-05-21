@@ -464,11 +464,13 @@ class ManagerialController extends Controller
     public function getRealisasiPendapatanPerAkun(Request $request): JsonResponse
     {
         $tahun = $request->input('tahun', now()->year);
-        $tanggal = \Carbon\Carbon::parse($request->input('tanggal', now()->toDateString()))->format('Y-m-d');
+        $tanggal = $request->input('tanggal');
 
         // Pre-aggregate DIPA
         $subqueryPagu = DB::table('tbl_dipa_pendapatan')
             ->select('akun', 'nama_akun', DB::raw('SUM(amount) as pagu'))
+            ->whereYear('tanggal_omspan', $tahun)
+            ->where('tanggal_omspan', $tanggal)
             ->groupBy('akun', 'nama_akun');
 
         // Main query joining with realisasi
@@ -478,7 +480,7 @@ class ManagerialController extends Controller
                 'dipa.akun',
                 'dipa.nama_akun',
                 'dipa.pagu',
-                DB::raw("SUM(CASE WHEN YEAR(realisasi.tanggal_omspan) = $tahun AND realisasi.tanggal_omspan <= '$tanggal' THEN realisasi.amount ELSE 0 END) as realisasi")
+                DB::raw("SUM(CASE WHEN YEAR(realisasi.tanggal_omspan) = $tahun AND realisasi.tanggal_omspan = '$tanggal' THEN realisasi.amount ELSE 0 END) as realisasi")
             )
             ->groupBy('dipa.akun', 'dipa.nama_akun', 'dipa.pagu')
             ->orderBy('dipa.akun')
