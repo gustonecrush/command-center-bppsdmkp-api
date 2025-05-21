@@ -329,7 +329,7 @@ class ManagerialController extends Controller
         // Total realisasi until the given date and year from Realisasi Pendapatan
         $totalRealisasi = DB::table('tbl_realisasi_pendapatan')
             ->whereYear('tanggal_omspan', $tahun)
-            ->where('tanggal_omspan')
+            ->where('tanggal_omspan', $tanggal)
             ->sum('amount');
 
         // Calculate remaining amount (sisa)
