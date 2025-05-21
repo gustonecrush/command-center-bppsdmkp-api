@@ -166,7 +166,7 @@ class ManagerialController extends Controller
                 END, 2
             ) as persen_realisasi")
             )
-            ->whereYear('realisasi.tanggal_omspan', $tahun);
+            ->whereYear('realisasi.tanggal_omspan', $tahun)->where('tanggal_omspan', $tanggal);
 
         // Add optional filtering by type
         if ($type === 'Pendidikan') {
