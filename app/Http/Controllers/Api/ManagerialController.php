@@ -325,6 +325,8 @@ class ManagerialController extends Controller
 
         // Total pagu from DIPA Pendapatan
         $totalPagu = DB::table('tbl_dipa_pendapatan')
+            ->whereYear('tanggal_omspan', $tahun)
+            ->where('tanggal_omspan', $tanggal)
             ->sum('amount');
 
         // Total realisasi until the given date and year from Realisasi Pendapatan
