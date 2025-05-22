@@ -539,13 +539,22 @@ class ManagerialController extends Controller
         $tahun = $request->input('tahun', now()->year);
 
         // 1. Get total pagu & realisasi per kdsatker
-        $tanggal = $request->input('tanggal');
+        // Subquery: Filtered DIPA
+        $dipaSub = DB::table('tbl_dipa_pendapatan')
+            ->whereDate('tanggal_omspan', $tanggal)
+            ->select('kdsatker', 'akun', 'nama_satker', 'amount');
 
-        $totalData = DB::table('tbl_dipa_pendapatan as d')
-            ->leftJoin('tbl_realisasi_pendapatan as r', function ($join) use ($tanggal) {
+        // Subquery: Filtered Realisasi
+        $realisasiSub = DB::table('tbl_realisasi_pendapatan')
+            ->whereDate('tanggal_omspan', $tanggal)
+            ->select('kdsatker', 'akun', 'amount');
+
+        // Join the filtered subqueries
+        $totalData = DB::table(DB::raw("({$dipaSub->toSql()}) as d"))
+            ->mergeBindings($dipaSub)
+            ->leftJoin(DB::raw("({$realisasiSub->toSql()}) as r"), function ($join) {
                 $join->on('d.kdsatker', '=', 'r.kdsatker')
-                    ->on('d.akun', '=', 'r.akun')
-                    ->whereDate('r.tanggal_omspan', $tanggal); // filter in JOIN condition
+                    ->on('d.akun', '=', 'r.akun');
             })
             ->select(
                 'd.kdsatker',
@@ -553,7 +562,6 @@ class ManagerialController extends Controller
                 DB::raw('SUM(d.amount) as pagu'),
                 DB::raw('IFNULL(SUM(r.amount), 0) as realisasi')
             )
-            ->whereDate('d.tanggal_omspan', $tanggal) // filter main table
             ->groupBy('d.kdsatker', 'd.nama_satker')
             ->get();
 
