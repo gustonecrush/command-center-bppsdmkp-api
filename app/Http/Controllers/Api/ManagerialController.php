@@ -749,47 +749,122 @@ class ManagerialController extends Controller
         return response()->json($data);
     }
 
+    // public function getGroupedPbjBySatker(Request $request)
+    // {
+    //     $tahun = $request->input('tahun');
+    //     $tanggal = $request->input('tanggal');
+
+    //     $subqueryOutstanding = DB::table('tbl_outstanding_blokir')
+    //         ->select(
+    //             'kdsatker',
+    //             DB::raw('SUM(outstanding) as total_outstanding'),
+    //             DB::raw('SUM(blokir) as total_blokir')
+    //         )
+    //         ->where('tanggal_omspan', $tanggal)
+    //         ->groupBy('kdsatker');
+
+    //     $query = DB::table('tbl_pbj')
+    //         ->select(
+    //             'nama_satker',
+    //             DB::raw('SUM(nilai_kontrak) as nilai_kontrak'),
+    //             DB::raw('SUM(nilai_realisasi) as nilai_realisasi'),
+    //             DB::raw('SUM(nilai_sisa) as nilai_outstanding'),
+    //             DB::raw('
+    //             CASE 
+    //                 WHEN SUM(nilai_kontrak) > 0 THEN ROUND((SUM(nilai_realisasi) / SUM(nilai_kontrak)) * 100, 2)
+    //                 ELSE 0
+    //             END as persentasi
+    //         '),
+    //             DB::raw('
+    //             CASE 
+    //                 WHEN SUM(nilai_kontrak) > 0 THEN ROUND((SUM(nilai_sisa) / SUM(nilai_kontrak)) * 100, 2)
+    //                 ELSE 0
+    //             END as persentasi_outstanding
+    //         ')
+    //         );
+
+    //     // Apply filters if present
+    //     if ($tahun) {
+    //         $query->whereYear('tanggal_omspan', $tahun);
+    //     }
+
+    //     if ($tanggal) {
+    //         $query->where('tanggal_omspan', $tanggal);
+    //     }
+
+    //     // Group after applying filters
+    //     $query->groupBy('nama_satker');
+
+    //     $result = $query->get();
+
+    //     return response()->json($result);
+    // }
+
     public function getGroupedPbjBySatker(Request $request)
     {
         $tahun = $request->input('tahun');
         $tanggal = $request->input('tanggal');
 
-        $query = DB::table('tbl_pbj')
+        // Subquery: Aggregate tbl_outstanding_blokir by kdsatker
+        $outstandingSub = DB::table('tbl_outstanding_blokir')
             ->select(
-                'nama_satker',
-                DB::raw('SUM(nilai_kontrak) as nilai_kontrak'),
-                DB::raw('SUM(nilai_realisasi) as nilai_realisasi'),
-                DB::raw('SUM(nilai_sisa) as nilai_outstanding'),
+                'kdsatker',
+                DB::raw('SUM(outstanding) as total_outstanding'),
+                DB::raw('SUM(blokir) as total_blokir')
+            )
+            ->where('tanggal_omspan', $tanggal)
+            ->groupBy('kdsatker');
+
+        // Main query: Aggregate tbl_pbj and join with subquery on kdsatker
+        $query = DB::table('tbl_pbj as p')
+            ->leftJoinSub($outstandingSub, 'o', function ($join) {
+                $join->on('p.kdsatker', '=', 'o.kdsatker');
+            })
+            ->select(
+                'p.kdsatker',
+                'p.nama_satker',
+                DB::raw('SUM(p.nilai_kontrak) as nilai_kontrak'),
+                DB::raw('SUM(p.nilai_realisasi) as nilai_realisasi'),
+                DB::raw('SUM(p.nilai_sisa) as nilai_outstanding_pbj'),
+
+                // Persentase PBJ Realisasi
                 DB::raw('
                 CASE 
-                    WHEN SUM(nilai_kontrak) > 0 THEN ROUND((SUM(nilai_realisasi) / SUM(nilai_kontrak)) * 100, 2)
+                    WHEN SUM(p.nilai_kontrak) > 0 THEN ROUND((SUM(p.nilai_realisasi) / SUM(p.nilai_kontrak)) * 100, 2)
                     ELSE 0
-                END as persentasi
+                END as persentasi_realisasi_pbj
             '),
+
+                // Persentase PBJ Outstanding
                 DB::raw('
                 CASE 
-                    WHEN SUM(nilai_kontrak) > 0 THEN ROUND((SUM(nilai_sisa) / SUM(nilai_kontrak)) * 100, 2)
+                    WHEN SUM(p.nilai_kontrak) > 0 THEN ROUND((SUM(p.nilai_sisa) / SUM(p.nilai_kontrak)) * 100, 2)
                     ELSE 0
-                END as persentasi_outstanding
-            ')
+                END as persentasi_outstanding_pbj
+            '),
+
+                // From tbl_outstanding_blokir
+                DB::raw('IFNULL(SUM(o.total_outstanding), 0) as total_outstanding_blokir'),
+                DB::raw('IFNULL(SUM(o.total_blokir), 0) as total_blokir')
             );
 
-        // Apply filters if present
+        // Apply filters
         if ($tahun) {
-            $query->whereYear('tanggal_omspan', $tahun);
+            $query->whereYear('p.tanggal_omspan', $tahun);
         }
 
         if ($tanggal) {
-            $query->where('tanggal_omspan', $tanggal);
+            $query->whereDate('p.tanggal_omspan', $tanggal);
         }
 
-        // Group after applying filters
-        $query->groupBy('nama_satker');
+        // Group by satker
+        $query->groupBy('p.kdsatker', 'p.nama_satker');
 
         $result = $query->get();
 
         return response()->json($result);
     }
+
 
 
     public function getPBJGroupedByAkun(Request $request)
