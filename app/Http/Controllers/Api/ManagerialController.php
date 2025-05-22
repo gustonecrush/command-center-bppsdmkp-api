@@ -73,7 +73,7 @@ class ManagerialController extends Controller
         // Pre-aggregate DIPA to reduce row count and avoid duplication
         $subqueryPagu = DB::table('tbl_dipa_belanja')
             ->select('kdsatker', DB::raw('SUM(amount) as pagu'))
-            ->whereDate('tanggal_omspan', $tanggal)
+            ->where('tanggal_omspan', $tanggal)
             ->groupBy('kdsatker');
 
         // Pre-aggregate Outstanding + Blokir
@@ -83,7 +83,7 @@ class ManagerialController extends Controller
                 DB::raw('SUM(outstanding) as total_outstanding'),
                 DB::raw('SUM(blokir) as total_blokir')
             )
-            ->whereDate('tanggal_omspan', $tanggal)
+            ->where('tanggal_omspan', $tanggal)
             ->groupBy('kdsatker');
 
         // Main query
@@ -106,7 +106,7 @@ class ManagerialController extends Controller
                 DB::raw('COALESCE(outstanding.total_outstanding, 0) as outstanding'),
                 DB::raw('COALESCE(outstanding.total_blokir, 0) as blokir')
             )
-            ->whereYear('realisasi.tanggal_omspan', $tahun);
+            ->whereYear('realisasi.tanggal_omspan', $tahun)->where('realisasi.tanggal_omspan', $tanggal);
 
         // Optional filter based on type
         if ($type === 'Pendidikan') {
