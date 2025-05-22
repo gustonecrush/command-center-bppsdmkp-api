@@ -539,10 +539,13 @@ class ManagerialController extends Controller
         $tahun = $request->input('tahun', now()->year);
 
         // 1. Get total pagu & realisasi per kdsatker
+        $tanggal = $request->input('tanggal');
+
         $totalData = DB::table('tbl_dipa_pendapatan as d')
-            ->leftJoin('tbl_realisasi_pendapatan as r', function ($join) {
+            ->leftJoin('tbl_realisasi_pendapatan as r', function ($join) use ($tanggal) {
                 $join->on('d.kdsatker', '=', 'r.kdsatker')
-                    ->on('d.akun', '=', 'r.akun');
+                    ->on('d.akun', '=', 'r.akun')
+                    ->whereDate('r.tanggal_omspan', $tanggal); // filter in JOIN condition
             })
             ->select(
                 'd.kdsatker',
@@ -550,10 +553,10 @@ class ManagerialController extends Controller
                 DB::raw('SUM(d.amount) as pagu'),
                 DB::raw('IFNULL(SUM(r.amount), 0) as realisasi')
             )
-            ->whereYear('d.tanggal_omspan', $tahun)
-            ->where('d.tanggal_omspan', $tanggal)
+            ->whereDate('d.tanggal_omspan', $tanggal) // filter main table
             ->groupBy('d.kdsatker', 'd.nama_satker')
             ->get();
+
 
         // 2. Get detail per akun per kdsatker
         $details = DB::table('tbl_dipa_pendapatan as d')
