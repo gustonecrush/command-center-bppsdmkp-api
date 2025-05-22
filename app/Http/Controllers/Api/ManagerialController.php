@@ -535,6 +535,9 @@ class ManagerialController extends Controller
 
     public function getRealisasiPendapatanPerSatkerPerAkun(Request $request)
     {
+        $tanggal = $request->input('tanggal');
+        $tahun = $request->input('tahun', now()->year);
+
         // 1. Get total pagu & realisasi per kdsatker
         $totalData = DB::table('tbl_dipa_pendapatan as d')
             ->leftJoin('tbl_realisasi_pendapatan as r', function ($join) {
@@ -547,6 +550,8 @@ class ManagerialController extends Controller
                 DB::raw('SUM(d.amount) as pagu'),
                 DB::raw('IFNULL(SUM(r.amount), 0) as realisasi')
             )
+            ->whereYear('d.tanggal_omspan', $tahun)
+            ->where('d.tanggal_omspan', $tanggal)
             ->groupBy('d.kdsatker', 'd.nama_satker')
             ->get();
 
@@ -563,6 +568,8 @@ class ManagerialController extends Controller
                 DB::raw('SUM(d.amount) as pagu'),
                 DB::raw('IFNULL(SUM(r.amount), 0) as realisasi')
             )
+            ->whereYear('d.tanggal_omspan', $tahun)
+            ->where('d.tanggal_omspan', $tanggal)
             ->groupBy('d.kdsatker', 'd.akun', 'd.nama_akun')
             ->get();
 
