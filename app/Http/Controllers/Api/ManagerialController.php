@@ -540,12 +540,14 @@ class ManagerialController extends Controller
 
         // Subquery: Filtered DIPA
         $dipaSub = DB::table('tbl_dipa_pendapatan')
-            ->whereDate('tanggal_omspan', $tanggal)
+            ->whereYear('tanggal_omspan', $tahun)
+            ->where('tanggal_omspan', $tanggal)
             ->select('kdsatker', 'akun', 'nama_satker', 'amount');
 
         // Subquery: Filtered Realisasi
         $realisasiSub = DB::table('tbl_realisasi_pendapatan')
-            ->whereDate('tanggal_omspan', $tanggal)
+            ->whereYear('tanggal_omspan', $tahun)
+            ->where('tanggal_omspan', $tanggal)
             ->select('kdsatker', 'akun', 'amount');
 
         // Join the filtered subqueries
