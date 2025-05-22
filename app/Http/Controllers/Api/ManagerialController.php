@@ -538,7 +538,6 @@ class ManagerialController extends Controller
         $tanggal = $request->input('tanggal');
         $tahun = $request->input('tahun', now()->year);
 
-        // 1. Get total pagu & realisasi per kdsatker
         // Subquery: Filtered DIPA
         $dipaSub = DB::table('tbl_dipa_pendapatan')
             ->whereDate('tanggal_omspan', $tanggal)
@@ -550,8 +549,7 @@ class ManagerialController extends Controller
             ->select('kdsatker', 'akun', 'amount');
 
         // Join the filtered subqueries
-        $totalData = DB::table(DB::raw("({$dipaSub->toSql()}) as d"))
-            ->mergeBindings($dipaSub)
+        $joinQuery = DB::table(DB::raw("({$dipaSub->toSql()}) as d"))
             ->leftJoin(DB::raw("({$realisasiSub->toSql()}) as r"), function ($join) {
                 $join->on('d.kdsatker', '=', 'r.kdsatker')
                     ->on('d.akun', '=', 'r.akun');
@@ -562,8 +560,14 @@ class ManagerialController extends Controller
                 DB::raw('SUM(d.amount) as pagu'),
                 DB::raw('IFNULL(SUM(r.amount), 0) as realisasi')
             )
-            ->groupBy('d.kdsatker', 'd.nama_satker')
-            ->get();
+            ->groupBy('d.kdsatker', 'd.nama_satker');
+
+        // Merge bindings from both subqueries
+        $joinQuery->mergeBindings($dipaSub)->mergeBindings($realisasiSub);
+
+        // Execute query
+        $totalData = $joinQuery->get();
+
 
 
         // 2. Get detail per akun per kdsatker
