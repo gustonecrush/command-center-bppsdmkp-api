@@ -155,12 +155,14 @@ class PesertaDidikController extends Controller
                     $query->where('sp.nama', 'LIKE', '%Sekolah%');
                 } elseif ($tingkatPendidikan === 'Politeknik') {
                     $query->where(function ($q) {
-                        $q->where(function ($sub) {
-                            $sub->where('sp.nama', 'LIKE', '%Politeknik%')
-                                ->orWhere('sp.nama', 'LIKE', '%Akademi%')
-                                ->orWhere('sp.nama', 'LIKE', '%Pasca%');
-                        });
-                    })->where('sp.nama', 'NOT LIKE', '%Kampus%');
+                        $q->where('sp.nama', 'LIKE', '%Politeknik%')
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                            ->orWhere('sp.nama', 'LIKE', '%Pasca%')
+                            ->orWhere(function ($sub) {
+                                $sub->where('sp.nama', 'LIKE', '%Kampus%')
+                                    ->where('sp.nama', 'LIKE', '%Politeknik AUP%');
+                            });
+                    });
                 }
             }
 
@@ -215,8 +217,11 @@ class PesertaDidikController extends Controller
                     $nama_satdik_query->where(function ($q) {
                         $q->where('sp.nama', 'LIKE', '%Politeknik%')
                             ->orWhere('sp.nama', 'LIKE', '%Akademi%')
-                            ->orWhere('sp.nama', 'LIKE', '%Kampus%')
-                            ->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                            ->orWhere('sp.nama', 'LIKE', '%Pasca%')
+                            ->orWhere(function ($sub) {
+                                $sub->where('sp.nama', 'LIKE', '%Kampus%')
+                                    ->where('sp.nama', 'LIKE', '%Politeknik AUP%');
+                            });
                     });
                 }
             }
