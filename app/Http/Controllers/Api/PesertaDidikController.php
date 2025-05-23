@@ -136,16 +136,13 @@ class PesertaDidikController extends Controller
             $satdik_id = $request->query('satdik_id');
             $tingkatPendidikan = $request->query('tingkatPendidikan');
 
-            // Get satdik name from satdik_id if provided
             $satdikNama = null;
             if ($satdik_id) {
                 $satdikNama = DB::table('satuan_pendidikan')->where('RowID', $satdik_id)->value('nama');
             }
 
-            // Base query with join
             $query = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama');
 
-            // Apply filters
             if ($satdikNama) {
                 $query->where('sp.nama', $satdikNama);
             }
@@ -158,15 +155,11 @@ class PesertaDidikController extends Controller
                         $q->where('sp.nama', 'LIKE', '%Politeknik%')
                             ->orWhere('sp.nama', 'LIKE', '%Akademi%')
                             ->orWhere('sp.nama', 'LIKE', '%Pasca%')
-                            ->orWhere(function ($sub) {
-                                $sub->where('sp.nama', 'LIKE', '%Kampus%')
-                                    ->where('sp.nama', 'LIKE', '%Politeknik AUP%');
-                            });
+                            ->orWhere('sp.nama', 'LIKE', '%Kampus%');
                     });
                 }
             }
 
-            // Clone for multiple grouped results
             $parent_job_count = (clone $query)
                 ->selectRaw('parent_job, COUNT(*) as count')
                 ->groupBy('parent_job')
@@ -203,7 +196,15 @@ class PesertaDidikController extends Controller
                 ->orderByDesc('count')
                 ->get();
 
-            // Re-query for nama_satdik_count (must be re-built because of different groupBy logic)
+            // ----------- REBUILD nama_satdik_count with custom mapping -------------
+            $aupKampus = [
+                'Kampus Tegal',
+                'Kampus Lampung',
+                'Kampus Aceh',
+                'Kampus Pariaman',
+                'Kampus Maluku',
+            ];
+
             $nama_satdik_query = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama');
 
             if ($satdikNama) {
@@ -214,35 +215,28 @@ class PesertaDidikController extends Controller
                 if ($tingkatPendidikan === 'SUPM') {
                     $nama_satdik_query->where('sp.nama', 'LIKE', '%Sekolah%');
                 } elseif ($tingkatPendidikan === 'Politeknik') {
-                    $aupKampus = [
-                        'Kampus Tegal',
-                        'Kampus Lampung',
-                        'Kampus Aceh',
-                        'Kampus Pariaman',
-                        'Kampus Maluku',
-                    ];
-
-                    // Create raw CASE statement for grouping
-                    $nama_satdik_count = $nama_satdik_query
-                        ->selectRaw("
-        CASE 
-            WHEN sp.nama IN ('" . implode("','", $aupKampus) . "') THEN 'Politeknik AUP'
-            ELSE sp.nama 
-        END as nama_satdik, COUNT(*) as count
-    ")
-                        ->groupBy('nama_satdik')
-                        ->orderByDesc('count')
-                        ->get();
+                    $nama_satdik_query->where(function ($q) use ($aupKampus) {
+                        $q->where('sp.nama', 'LIKE', '%Politeknik%')
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                            ->orWhere('sp.nama', 'LIKE', '%Pasca%')
+                            ->orWhereIn('sp.nama', $aupKampus);
+                    });
                 }
             }
 
             $nama_satdik_count = $nama_satdik_query
-                ->selectRaw('sp.nama as nama_satdik, COUNT(*) as count')
-                ->groupBy('sp.nama')
+                ->selectRaw("
+                CASE 
+                    WHEN sp.nama IN ('" . implode("','", $aupKampus) . "') THEN 'Politeknik AUP'
+                    ELSE sp.nama 
+                END as nama_satdik,
+                COUNT(*) as count
+            ")
+                ->groupBy('nama_satdik')
                 ->orderByDesc('count')
                 ->get();
 
-            // Return all results
+            // ---------------- RETURN ------------------
             return response()->json([
                 'parent_job_count' => $parent_job_count,
                 'origin_count' => $origin_count,
@@ -257,6 +251,7 @@ class PesertaDidikController extends Controller
             return response()->json(['error' => 'Something went wrong.'], 500);
         }
     }
+
 
 
     public function summaryPerType(Request $request)
