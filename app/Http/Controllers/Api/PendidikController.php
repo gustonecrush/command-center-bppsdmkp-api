@@ -135,17 +135,50 @@ class PendidikController extends Controller
                 ];
             });
 
-        $nama_satdik_count = Pendidik::join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID')
+        $kampusAUP = [
+            'Politeknik AUP',
+            'Pasca Sarjana Politeknik AUP',
+            'Kampus Tegal',
+            'Kampus Lampung',
+            'Kampus Aceh',
+            'Kampus Pariaman',
+            'Kampus Maluku',
+        ];
+
+        $politeknikAupCount = Pendidik::join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID')
             ->when($satdik_id, function ($q) use ($satdik_id) {
                 $q->where('pendidiks.satdik_id', $satdik_id);
             })
+            ->whereIn('sp.nama', $kampusAUP)
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
                 if ($tingkatPendidikan === 'SUPM') {
                     $q->where('sp.nama', 'LIKE', '%Sekolah%');
                 } elseif ($tingkatPendidikan === 'Politeknik') {
                     $q->where(function ($q2) {
                         $q2->where('sp.nama', 'LIKE', '%Politeknik%')
-                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                            ->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                    });
+                }
+            })
+            ->selectRaw('"Politeknik AUP" as nama_satdik, COUNT(*) as count')
+            ->groupBy('nama_satdik')
+            ->first();
+
+        // Query kampus selain Politeknik AUP
+        $otherSatdikCounts = Pendidik::join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID')
+            ->when($satdik_id, function ($q) use ($satdik_id) {
+                $q->where('pendidiks.satdik_id', $satdik_id);
+            })
+            ->whereNotIn('sp.nama', $kampusAUP)
+            ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+                if ($tingkatPendidikan === 'SUPM') {
+                    $q->where('sp.nama', 'LIKE', '%Sekolah%');
+                } elseif ($tingkatPendidikan === 'Politeknik') {
+                    $q->where(function ($q2) {
+                        $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                            ->orWhere('sp.nama', 'LIKE', '%Pasca%');
                     });
                 }
             })
@@ -153,6 +186,31 @@ class PendidikController extends Controller
             ->groupBy('sp.nama')
             ->orderByDesc('count')
             ->get();
+
+        // Gabungkan hasil politeknik AUP di depan, lalu kampus lain
+        $nama_satdik_count = $otherSatdikCounts;
+        if ($politeknikAupCount) {
+            $nama_satdik_count->prepend($politeknikAupCount);
+        }
+
+        // $nama_satdik_count = Pendidik::join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID')
+        //     ->when($satdik_id, function ($q) use ($satdik_id) {
+        //         $q->where('pendidiks.satdik_id', $satdik_id);
+        //     })
+        //     ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+        //         if ($tingkatPendidikan === 'SUPM') {
+        //             $q->where('sp.nama', 'LIKE', '%Sekolah%');
+        //         } elseif ($tingkatPendidikan === 'Politeknik') {
+        //             $q->where(function ($q2) {
+        //                 $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+        //                     ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
+        //             });
+        //         }
+        //     })
+        //     ->selectRaw('sp.nama as nama_satdik, COUNT(*) as count')
+        //     ->groupBy('sp.nama')
+        //     ->orderByDesc('count')
+        //     ->get();
 
 
         return response()->json([
