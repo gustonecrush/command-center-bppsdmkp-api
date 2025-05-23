@@ -214,14 +214,20 @@ class PesertaDidikController extends Controller
                 if ($tingkatPendidikan === 'SUPM') {
                     $nama_satdik_query->where('sp.nama', 'LIKE', '%Sekolah%');
                 } elseif ($tingkatPendidikan === 'Politeknik') {
-                    $nama_satdik_query->where(function ($q) {
+                    $politeknikAupKampus = [
+                        'Politeknik AUP',
+                        'Kampus Tegal',
+                        'Kampus Lampung',
+                        'Kampus Aceh',
+                        'Kampus Pariaman',
+                        'Kampus Maluku',
+                    ];
+
+                    $nama_satdik_query->where(function ($q) use ($politeknikAupKampus) {
                         $q->where('sp.nama', 'LIKE', '%Politeknik%')
                             ->orWhere('sp.nama', 'LIKE', '%Akademi%')
                             ->orWhere('sp.nama', 'LIKE', '%Pasca%')
-                            ->orWhere(function ($sub) {
-                                $sub->where('sp.nama', 'LIKE', '%Kampus%')
-                                    ->where('sp.nama', 'LIKE', '%Politeknik AUP%');
-                            });
+                            ->orWhereIn('sp.nama', $politeknikAupKampus); // whitelist kampus under Politeknik AUP
                     });
                 }
             }
