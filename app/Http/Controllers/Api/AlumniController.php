@@ -39,10 +39,7 @@ class AlumniController extends Controller
 
     public function summary(Request $request)
     {
-        // Get the satdik_id from the query parameters
         $satdik_id = $request->query('satdik_id');
-
-        // Base query for the Alumni model
         $tingkatPendidikan = $request->query('tingkatPendidikan');
 
         $query = Alumni::query();
@@ -55,17 +52,17 @@ class AlumniController extends Controller
             } elseif ($tingkatPendidikan === 'Politeknik') {
                 $q->where(function ($q2) {
                     $q2->where('sp.nama', 'LIKE', '%Politeknik%')
-                        ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                        ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                        ->orWhere('sp.nama', 'LIKE', '%Pasca%');
                 });
             }
         });
 
-        // Apply the satdik_id filter if provided
         if ($satdik_id) {
             $query->where('satdik_id', $satdik_id);
         }
 
-        // Get counts for each column group: absorption and company_country
+        // Count other columns (tidak diubah)
         $absorption_counts = $query->clone()
             ->select('absorption')
             ->groupBy('absorption')
@@ -94,7 +91,6 @@ class AlumniController extends Controller
             ->selectRaw('work_status, COUNT(*) as count')
             ->orderByDesc('count')
             ->get();
-
 
         $income_range_counts = $query->clone()
             ->select('income_range')
@@ -132,17 +128,53 @@ class AlumniController extends Controller
             ->orderByDesc('count')
             ->get();
 
-        $nama_satdik_count = Alumni::join('satuan_pendidikan as sp', 'alumnis.satdik_id', '=', 'sp.RowID')
+
+        // List kampus yang masuk kategori Politeknik AUP
+        $kampusAUP = [
+            'Politeknik AUP',
+            'Pasca Sarjana Politeknik AUP',
+            'Kampus Tegal',
+            'Kampus Lampung',
+            'Kampus Aceh',
+            'Kampus Pariaman',
+            'Kampus Maluku',
+        ];
+
+        // Query jumlah alumni untuk kampus Politeknik AUP (digabung)
+        $politeknikAupCount = Alumni::join('satuan_pendidikan as sp', 'alumnis.satdik_id', '=', 'sp.RowID')
             ->when($satdik_id, function ($q) use ($satdik_id) {
                 $q->where('alumnis.satdik_id', $satdik_id);
             })
+            ->whereIn('sp.nama', $kampusAUP)
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
                 if ($tingkatPendidikan === 'SUPM') {
                     $q->where('sp.nama', 'LIKE', '%Sekolah%');
                 } elseif ($tingkatPendidikan === 'Politeknik') {
                     $q->where(function ($q2) {
                         $q2->where('sp.nama', 'LIKE', '%Politeknik%')
-                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                            ->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                    });
+                }
+            })
+            ->selectRaw('"Politeknik AUP" as nama_satdik, COUNT(*) as count')
+            ->groupBy('nama_satdik')
+            ->first();
+
+        // Query kampus selain Politeknik AUP
+        $otherSatdikCounts = Alumni::join('satuan_pendidikan as sp', 'alumnis.satdik_id', '=', 'sp.RowID')
+            ->when($satdik_id, function ($q) use ($satdik_id) {
+                $q->where('alumnis.satdik_id', $satdik_id);
+            })
+            ->whereNotIn('sp.nama', $kampusAUP)
+            ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+                if ($tingkatPendidikan === 'SUPM') {
+                    $q->where('sp.nama', 'LIKE', '%Sekolah%');
+                } elseif ($tingkatPendidikan === 'Politeknik') {
+                    $q->where(function ($q2) {
+                        $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                            ->orWhere('sp.nama', 'LIKE', '%Pasca%');
                     });
                 }
             })
@@ -151,8 +183,13 @@ class AlumniController extends Controller
             ->orderByDesc('count')
             ->get();
 
+        // Gabungkan hasil politeknik AUP di depan, lalu kampus lain
+        $nama_satdik_count = $otherSatdikCounts;
+        if ($politeknikAupCount) {
+            $nama_satdik_count->prepend($politeknikAupCount);
+        }
 
-        // Calculate total counts
+        // Hitung total untuk berbagai kategori
         $total_absorption_count = $absorption_counts->sum('count');
         $total_study_program_count = $study_program_count->sum('count');
         $total_company_country_count = $company_country_counts->sum('count');
@@ -163,7 +200,7 @@ class AlumniController extends Controller
         $total_alumni_per_year_count = $alumni_per_year_counts->sum('count');
         $total_top_job_fields_count = $top_job_fields->sum('count');
 
-        // Prepare the data with totals
+        // Susun data response
         $data = [
             'absorption_count' => $absorption_counts,
             'total_absorption_count' => $total_absorption_count,
@@ -186,7 +223,6 @@ class AlumniController extends Controller
             'nama_satdik_count' => $nama_satdik_count,
         ];
 
-        // Return a JSON response
         return response()->json($data);
     }
 }
