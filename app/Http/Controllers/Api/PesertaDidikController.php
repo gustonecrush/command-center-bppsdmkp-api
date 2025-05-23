@@ -214,8 +214,7 @@ class PesertaDidikController extends Controller
                 if ($tingkatPendidikan === 'SUPM') {
                     $nama_satdik_query->where('sp.nama', 'LIKE', '%Sekolah%');
                 } elseif ($tingkatPendidikan === 'Politeknik') {
-                    $politeknikAupKampus = [
-                        'Politeknik AUP',
+                    $aupKampus = [
                         'Kampus Tegal',
                         'Kampus Lampung',
                         'Kampus Aceh',
@@ -223,12 +222,17 @@ class PesertaDidikController extends Controller
                         'Kampus Maluku',
                     ];
 
-                    $nama_satdik_query->where(function ($q) use ($politeknikAupKampus) {
-                        $q->where('sp.nama', 'LIKE', '%Politeknik%')
-                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
-                            ->orWhere('sp.nama', 'LIKE', '%Pasca%')
-                            ->orWhereIn('sp.nama', $politeknikAupKampus); // whitelist kampus under Politeknik AUP
-                    });
+                    // Create raw CASE statement for grouping
+                    $nama_satdik_count = $nama_satdik_query
+                        ->selectRaw("
+        CASE 
+            WHEN sp.nama IN ('" . implode("','", $aupKampus) . "') THEN 'Politeknik AUP'
+            ELSE sp.nama 
+        END as nama_satdik, COUNT(*) as count
+    ")
+                        ->groupBy('nama_satdik')
+                        ->orderByDesc('count')
+                        ->get();
                 }
             }
 
