@@ -10,4 +10,6 @@ class SatuanPendidikan extends Model
     use HasFactory;
     protected $primaryKey = 'RowID';
     protected $table = "satuan_pendidikan";
+
+    public $timestamps = false;
 }
