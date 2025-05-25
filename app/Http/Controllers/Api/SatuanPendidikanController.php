@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\SatuanPendidikan;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Str;
+use Illuminate\Support\Str;
 
 class SatuanPendidikanController extends Controller
 {
