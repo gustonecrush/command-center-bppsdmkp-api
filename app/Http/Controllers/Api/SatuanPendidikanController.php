@@ -25,7 +25,7 @@ class SatuanPendidikanController extends Controller
     public function updateWebsite(Request $request, $rowId)
     {
         $request->validate([
-            'image' => 'required|image|max:2048', // max 2MB
+            'image' => 'required|image|max:20048', // max 2MB
         ]);
 
         $satuan = SatuanPendidikan::where('RowID', $rowId)->first();
