@@ -92,4 +92,4 @@ Route::put('publikasi/{id}', [PublicationController::class, 'update']);       //
 Route::patch('publikasi/{id}/access_count', [PublicationController::class, 'updateAccessCount']);
 Route::patch('publikasi/{id}/tanggal_count', [PublicationController::class, 'updateTanggalCount']);
 
-Route::get('/satuan-pendidikan/profile', [SatuanPendidikanController::class, 'updateWebsite']);
+Route::post('/satuan-pendidikan/profile', [SatuanPendidikanController::class, 'updateWebsite']);
