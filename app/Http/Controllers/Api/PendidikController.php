@@ -73,7 +73,7 @@ class PendidikController extends Controller
         $query = Pendidik::query();
 
         $query->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
-            $q->join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID');
+            $q->join('satuan_pendidikan as sp', 'pendidiks.id_satdik', '=', 'sp.RowID');
 
             if ($tingkatPendidikan === 'SUPM') {
                 $q->where('sp.nama', 'LIKE', '%Sekolah%');
@@ -86,7 +86,7 @@ class PendidikController extends Controller
         });
 
         if ($satdik_id) {
-            $query->where('pendidiks.satdik_id', $satdik_id);
+            $query->where('pendidiks.id_satdik', $satdik_id);
         }
 
         // Copy the filtered base query for each summary
@@ -145,9 +145,9 @@ class PendidikController extends Controller
             'Kampus Maluku',
         ];
 
-        $politeknikAupCount = Pendidik::join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID')
+        $politeknikAupCount = Pendidik::join('satuan_pendidikan as sp', 'pendidiks.id_satdik', '=', 'sp.RowID')
             ->when($satdik_id, function ($q) use ($satdik_id) {
-                $q->where('pendidiks.satdik_id', $satdik_id);
+                $q->where('pendidiks.id_satdik', $satdik_id);
             })
             ->whereIn('sp.nama', $kampusAUP)
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
@@ -166,9 +166,9 @@ class PendidikController extends Controller
             ->first();
 
         // Query kampus selain Politeknik AUP
-        $otherSatdikCounts = Pendidik::join('satuan_pendidikan as sp', 'pendidiks.satdik_id', '=', 'sp.RowID')
+        $otherSatdikCounts = Pendidik::join('satuan_pendidikan as sp', 'pendidiks.id_satdik', '=', 'sp.RowID')
             ->when($satdik_id, function ($q) use ($satdik_id) {
-                $q->where('pendidiks.satdik_id', $satdik_id);
+                $q->where('pendidiks.id_satdik', $satdik_id);
             })
             ->whereNotIn('sp.nama', $kampusAUP)
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
