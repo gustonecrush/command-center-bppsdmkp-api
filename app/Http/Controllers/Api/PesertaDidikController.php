@@ -141,51 +141,67 @@ class PesertaDidikController extends Controller
                 $satdikNama = DB::table('satuan_pendidikan')->where('RowID', $satdik_id)->value('nama');
             }
 
-            $query = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama');
+            $query = PesertaDidik::query();
 
-            if ($satdikNama) {
-                $query->where('sp.nama', $satdikNama);
-            }
+            // $query = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama');
+
+            // if ($satdikNama) {
+            //     $query->where('sp.nama', $satdikNama);
+            // }
+
+            // if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
+            //     if ($tingkatPendidikan === 'SUPM') {
+            //         $query->where('sp.nama', 'LIKE', '%Sekolah%');
+            //     } elseif ($tingkatPendidikan === 'Politeknik') {
+            //         $query->where(function ($q) {
+            //             $q->where('sp.nama', 'LIKE', '%Politeknik%')
+            //                 ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+            //                 ->orWhere('sp.nama', 'LIKE', '%Pasca%')
+            //                 ->orWhere('sp.nama', 'LIKE', '%Kampus%');
+            //         });
+            //     }
+            // }
 
             if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
+                $query->join('satuan_pendidikan as sp', 'tenaga_kependidikans.satdik_id', '=', 'sp.RowID');
+
                 if ($tingkatPendidikan === 'SUPM') {
                     $query->where('sp.nama', 'LIKE', '%Sekolah%');
                 } elseif ($tingkatPendidikan === 'Politeknik') {
-                    $query->where(function ($q) {
-                        $q->where('sp.nama', 'LIKE', '%Politeknik%')
+                    $query->where(function ($q2) {
+                        $q2->where('sp.nama', 'LIKE', '%Politeknik%')
                             ->orWhere('sp.nama', 'LIKE', '%Akademi%')
-                            ->orWhere('sp.nama', 'LIKE', '%Pasca%')
-                            ->orWhere('sp.nama', 'LIKE', '%Kampus%');
+                            ->orWhere('sp.nama', 'LIKE', '%Pasca%');
                     });
                 }
             }
 
             $parent_job_count = (clone $query)
-                ->selectRaw('parent_job, COUNT(*) as count')
-                ->groupBy('parent_job')
+                ->selectRaw('pekerjaan_orang_tua, COUNT(*) as count')
+                ->groupBy('pekerjaan_orang_tua')
                 ->orderByDesc('count')
                 ->get();
 
             $origin_count = (clone $query)
-                ->selectRaw('origin, COUNT(*) as count')
-                ->groupBy('origin')
+                ->selectRaw('asal, COUNT(*) as count')
+                ->groupBy('asal')
                 ->orderByDesc('count')
                 ->get();
 
             $prodis_count = (clone $query)
-                ->selectRaw('prodis, COUNT(*) as count')
-                ->groupBy('prodis')
+                ->selectRaw('nama_prodi, COUNT(*) as count')
+                ->groupBy('nama_prodi')
                 ->orderByDesc('count')
                 ->get();
 
             $province_counts = (clone $query)
-                ->selectRaw('province_name, COUNT(*) as count')
-                ->groupBy('province_name')
+                ->selectRaw('provinsi, COUNT(*) as count')
+                ->groupBy('provinsi')
                 ->orderByDesc('count')
                 ->get();
 
             $religion_counts = (clone $query)
-                ->selectRaw('religion, COUNT(*) as count')
+                ->selectRaw('agama, COUNT(*) as count')
                 ->groupBy('religion')
                 ->orderByDesc('count')
                 ->get();
@@ -197,7 +213,36 @@ class PesertaDidikController extends Controller
                 ->get();
 
             // ----------- REBUILD nama_satdik_count with custom mapping -------------
-            $aupKampus = [
+            // $aupKampus = [
+            //     'Kampus Tegal',
+            //     'Kampus Lampung',
+            //     'Kampus Aceh',
+            //     'Kampus Pariaman',
+            //     'Kampus Maluku',
+            // ];
+
+            // $nama_satdik_query = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama');
+
+            // if ($satdikNama) {
+            //     $nama_satdik_query->where('sp.nama', $satdikNama);
+            // }
+
+            // if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
+            //     if ($tingkatPendidikan === 'SUPM') {
+            //         $nama_satdik_query->where('sp.nama', 'LIKE', '%Sekolah%');
+            //     } elseif ($tingkatPendidikan === 'Politeknik') {
+            //         $nama_satdik_query->where(function ($q) use ($aupKampus) {
+            //             $q->where('sp.nama', 'LIKE', '%Politeknik%')
+            //                 ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+            //                 ->orWhere('sp.nama', 'LIKE', '%Pasca%')
+            //                 ->orWhereIn('sp.nama', $aupKampus);
+            //         });
+            //     }
+            // }
+
+            $kampusAUP = [
+                'Politeknik AUP',
+                'Pasca Sarjana Politeknik AUP',
                 'Kampus Tegal',
                 'Kampus Lampung',
                 'Kampus Aceh',
@@ -205,36 +250,54 @@ class PesertaDidikController extends Controller
                 'Kampus Maluku',
             ];
 
-            $nama_satdik_query = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama');
-
-            if ($satdikNama) {
-                $nama_satdik_query->where('sp.nama', $satdikNama);
-            }
-
-            if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
-                if ($tingkatPendidikan === 'SUPM') {
-                    $nama_satdik_query->where('sp.nama', 'LIKE', '%Sekolah%');
-                } elseif ($tingkatPendidikan === 'Politeknik') {
-                    $nama_satdik_query->where(function ($q) use ($aupKampus) {
-                        $q->where('sp.nama', 'LIKE', '%Politeknik%')
-                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
-                            ->orWhere('sp.nama', 'LIKE', '%Pasca%')
-                            ->orWhereIn('sp.nama', $aupKampus);
-                    });
-                }
-            }
-
-            $nama_satdik_count = $nama_satdik_query
-                ->selectRaw("
-                CASE 
-                    WHEN sp.nama IN ('" . implode("','", $aupKampus) . "') THEN 'Politeknik AUP'
-                    ELSE sp.nama 
-                END as nama_satdik,
-                COUNT(*) as count
-            ")
+            $politeknikAupCount = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.id_satdik', '=', 'sp.RowID')
+                ->when($satdik_id, function ($q) use ($satdik_id) {
+                    $q->where('peserta_didiks.id_satdik', $satdik_id);
+                })
+                ->whereIn('sp.nama', $kampusAUP)
+                ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+                    if ($tingkatPendidikan === 'Menengah') {
+                        $q->where('sp.nama', 'LIKE', '%Sekolah%');
+                    } elseif ($tingkatPendidikan === 'Tinggi') {
+                        $q->where(function ($q2) {
+                            $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                                ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                                ->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                        });
+                    }
+                })
+                ->selectRaw('"Politeknik AUP" as nama_satdik, COUNT(*) as count')
                 ->groupBy('nama_satdik')
+                ->first();
+
+            // Query kampus selain Politeknik AUP
+            $otherSatdikCounts = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.id_satdik', '=', 'sp.RowID')
+                ->when($satdik_id, function ($q) use ($satdik_id) {
+                    $q->where('peserta_didiks.id_satdik', $satdik_id);
+                })
+                ->whereNotIn('sp.nama', $kampusAUP)
+                ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+                    if ($tingkatPendidikan === 'Menengah') {
+                        $q->where('sp.nama', 'LIKE', '%Sekolah%');
+                    } elseif ($tingkatPendidikan === 'Tinggi') {
+                        $q->where(function ($q2) {
+                            $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                                ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                                ->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                        });
+                    }
+                })
+                ->selectRaw('sp.nama as nama_satdik, COUNT(*) as count')
+                ->groupBy('sp.nama')
                 ->orderByDesc('count')
                 ->get();
+
+            // Gabungkan hasil politeknik AUP di depan, lalu kampus lain
+            $nama_satdik_count = $otherSatdikCounts;
+            if ($politeknikAupCount) {
+                $nama_satdik_count->prepend($politeknikAupCount);
+            }
+
 
             // ---------------- RETURN ------------------
             return response()->json([
