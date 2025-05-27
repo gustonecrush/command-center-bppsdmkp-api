@@ -202,7 +202,7 @@ class PesertaDidikController extends Controller
 
             $religion_counts = (clone $query)
                 ->selectRaw('agama, COUNT(*) as count')
-                ->groupBy('religion')
+                ->groupBy('agama')
                 ->orderByDesc('count')
                 ->get();
 
