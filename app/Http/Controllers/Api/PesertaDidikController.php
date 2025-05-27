@@ -189,7 +189,7 @@ class PesertaDidikController extends Controller
                 ->get();
 
             $prodis_count = (clone $query)
-                ->join('mtr_program_studis', 'peserta_didikls.id_program_studi', '=', 'mtr_program_studis.id')
+                ->join('mtr_program_studis', 'peserta_didiks.id_program_studi', '=', 'mtr_program_studis.id')
                 ->selectRaw('mtr_program_studis.program_studi_singkatan, COUNT(*) as count')
                 ->groupBy('mtr_program_studis.program_studi_singkatan')
                 ->orderByDesc('count')
