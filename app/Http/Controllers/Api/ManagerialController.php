@@ -6,9 +6,11 @@ use App\Models\TblPbj;
 use App\Models\TblRealisasiBelanja;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\TblKerjaSama;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ManagerialController extends Controller
 {
@@ -1013,5 +1015,35 @@ class ManagerialController extends Controller
         return response()->json([
             'tanggal_omspan' => $tanggalList,
         ]);
+    }
+
+
+    public function getpostDocumentKS(Request $request, $rowId)
+    {
+        $request->validate([
+            'document' => 'required|mimes:pdf|max:20048', // max 2MB
+        ]);
+
+        $satuan = TblKerjaSama::where('ID', $rowId)->first();
+
+        if (!$satuan) {
+            return response()->json(['message' => 'Data not found.'], 404);
+        }
+
+        if ($request->hasFile('document')) {
+            $filename = Str::uuid() . '.' . $request->file('document')->getClientOriginalExtension();
+            $path = $request->file('document')->storeAs('ks', $filename, 'public');
+
+            // Save the URL or relative path to the Website column
+            $satuan->File_Dokumen = '/storage/' . $path;
+            $satuan->save();
+
+            return response()->json([
+                'message' => 'Image uploaded and Website updated.',
+                'data' => $satuan
+            ]);
+        }
+
+        return response()->json(['message' => 'Image not uploaded.'], 400);
     }
 }
