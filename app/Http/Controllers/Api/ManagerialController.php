@@ -1105,7 +1105,7 @@ class ManagerialController extends Controller
     }
 
 
-    public function getpostDocumentKS(Request $request, $rowId)
+    public function postDocumentKS(Request $request, $rowId)
     {
         $request->validate([
             'document' => 'required|mimes:pdf|max:20048', // max 2MB
