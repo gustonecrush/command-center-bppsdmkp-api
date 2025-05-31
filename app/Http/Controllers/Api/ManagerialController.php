@@ -129,7 +129,8 @@ class ManagerialController extends Controller
             'dipa.pagu',
             'outstanding.total_outstanding',
             'outstanding.total_blokir'
-        )->orderByRaw("
+        )
+            ->orderByRaw("
     CASE
         WHEN nama_satker LIKE '%Sekretariat%' THEN 1
         WHEN nama_satker LIKE '%Pusat%' THEN 2
@@ -141,10 +142,8 @@ class ManagerialController extends Controller
         WHEN nama_satker LIKE '%Loka%' THEN 8
         ELSE 9
     END ASC
-")
-            ->orderByDesc('persen_realisasi')
+");
 
-        ;
 
         $result = $query->get();
 
