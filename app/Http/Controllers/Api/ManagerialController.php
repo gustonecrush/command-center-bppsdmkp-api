@@ -134,14 +134,15 @@ class ManagerialController extends Controller
     CASE
         WHEN nama_satker LIKE '%Sekretariat%' THEN 1
         WHEN nama_satker LIKE '%Pusat%' THEN 2
-        WHEN nama_satker LIKE '%Politeknik%' THEN 3
-        WHEN nama_satker LIKE '%Akademi%' THEN 4
-        WHEN nama_satker LIKE '%Sekolah%' THEN 5
-        WHEN nama_satker LIKE '%Pelatihan%' THEN 6
-        WHEN nama_satker LIKE '%Penyuluhan%' THEN 7
-                WHEN nama_satker LIKE '%Balai Riset%' THEN 8
-        WHEN nama_satker LIKE '%Loka%' THEN 9
-        ELSE 10
+          WHEN nama_satker LIKE '%Balai Besar%' THEN 3
+        WHEN nama_satker LIKE '%Politeknik%' THEN 4
+        WHEN nama_satker LIKE '%Akademi%' THEN 5
+        WHEN nama_satker LIKE '%Sekolah%' THEN 6
+        WHEN nama_satker LIKE '%Pelatihan%' THEN 7
+        WHEN nama_satker LIKE '%Penyuluhan%' THEN 8
+                WHEN nama_satker LIKE '%Balai Riset%' THEN 9
+        WHEN nama_satker LIKE '%Loka%' THEN 10
+        ELSE 11
     END ASC
 ");
 
