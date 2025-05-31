@@ -139,8 +139,9 @@ class ManagerialController extends Controller
         WHEN nama_satker LIKE '%Sekolah%' THEN 5
         WHEN nama_satker LIKE '%Pelatihan%' THEN 6
         WHEN nama_satker LIKE '%Penyuluhan%' THEN 7
-        WHEN nama_satker LIKE '%Loka%' THEN 8
-        ELSE 9
+                WHEN nama_satker LIKE '%Balai Riset%' THEN 8
+        WHEN nama_satker LIKE '%Loka%' THEN 9
+        ELSE 10
     END ASC
 ");
 
