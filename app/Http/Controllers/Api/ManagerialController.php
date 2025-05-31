@@ -199,15 +199,20 @@ class ManagerialController extends Controller
         $query = $query
             ->groupBy('realisasi.kdsatker', 'realisasi.nama_satker', 'dipa.pagu')
             ->orderByRaw("
-            CASE
-                WHEN LOWER(nama_satker) LIKE '%sekretariat%' THEN 1
-                WHEN LOWER(nama_satker) LIKE '%pusat%' THEN 2
-                WHEN LOWER(nama_satker) LIKE '%politeknik%' THEN 3
-                WHEN LOWER(nama_satker) LIKE '%sekolah%' THEN 4
-                WHEN LOWER(nama_satker) LIKE '%loka%' THEN 5
-                ELSE 6
-            END, nama_satker ASC
-        ")
+    CASE
+        WHEN nama_satker LIKE '%Sekretariat%' THEN 1
+        WHEN nama_satker LIKE '%Pusat%' THEN 2
+          WHEN nama_satker LIKE '%Balai Besar%' THEN 3
+        WHEN nama_satker LIKE '%Politeknik%' THEN 4
+        WHEN nama_satker LIKE '%Akademi%' THEN 5
+        WHEN nama_satker LIKE '%Sekolah%' THEN 6
+        WHEN nama_satker LIKE '%Pelatihan%' THEN 7
+        WHEN nama_satker LIKE '%Penyuluhan%' THEN 8
+                WHEN nama_satker LIKE '%Balai Riset%' THEN 9
+        WHEN nama_satker LIKE '%Loka%' THEN 10
+        ELSE 11
+    END ASC
+")
             ->get();
 
         return response()->json($query);
