@@ -10,6 +10,7 @@ use App\Models\TblKerjaSama;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ManagerialController extends Controller
@@ -1104,11 +1105,10 @@ class ManagerialController extends Controller
         ]);
     }
 
-
     public function postDocumentKS(Request $request, $rowId)
     {
         $request->validate([
-            'document' => 'required|mimes:pdf|max:20048', // max 2MB
+            'document' => 'required|mimes:pdf|max:20048', // max 20MB
         ]);
 
         $satuan = TblKerjaSama::where('ID', $rowId)->first();
@@ -1118,19 +1118,27 @@ class ManagerialController extends Controller
         }
 
         if ($request->hasFile('document')) {
+            if ($satuan->File_Dokumen) {
+                $oldPath = str_replace('/storage/', '', $satuan->File_Dokumen);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+
+            // Store new file
             $filename = Str::uuid() . '.' . $request->file('document')->getClientOriginalExtension();
             $path = $request->file('document')->storeAs('ks', $filename, 'public');
 
-            // Save the URL or relative path to the Website column
+            // Save new file path
             $satuan->File_Dokumen = '/storage/' . $path;
             $satuan->save();
 
             return response()->json([
-                'message' => 'Image uploaded and Website updated.',
+                'message' => 'File uploaded successfully.',
                 'data' => $satuan
             ]);
         }
 
-        return response()->json(['message' => 'Image not uploaded.'], 400);
+        return response()->json(['message' => 'No file uploaded.'], 400);
     }
 }
