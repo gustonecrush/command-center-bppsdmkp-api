@@ -10,4 +10,6 @@ class TblKerjaSama extends Model
     use HasFactory;
 
     protected $table = "tbl_kerjasama";
+
+    public $timestamps = false;
 }
