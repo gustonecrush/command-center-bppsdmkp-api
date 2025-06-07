@@ -374,27 +374,69 @@ class ManagerialController extends Controller
         ]);
     }
 
+    // public function getRealisasiDanSisaPendapatan(Request $request): JsonResponse
+    // {
+    //     $tahun = $request->input('tahun', now()->year);
+    //     $tanggal = $request->input(key: 'tanggal');
+
+    //     // Total pagu from DIPA Pendapatan
+    //     $totalPagu = DB::table('tbl_dipa_pendapatan')
+    //         ->whereYear('tanggal_omspan', $tahun)
+    //         ->where('tanggal_omspan', $tanggal)
+    //         ->sum('amount');
+
+    //     // Total realisasi until the given date and year from Realisasi Pendapatan
+    //     $totalRealisasi = DB::table('tbl_realisasi_pendapatan')
+    //         ->whereYear('tanggal_omspan', $tahun)
+    //         ->where('tanggal_omspan', $tanggal)
+    //         ->sum('amount');
+
+    //     // Calculate remaining amount (sisa)
+    //     $sisa = $totalPagu - $totalRealisasi;
+
+    //     // Calculate the percentage (presentasi)
+    //     $presentasi = $totalPagu > 0 ? round(($totalRealisasi / $totalPagu) * 100, 2) : 0;
+
+    //     return response()->json([
+    //         'tahun' => (int) $tahun,
+    //         'tanggal' => $tanggal,
+    //         'pagu' => $totalPagu,
+    //         'realisasi' => $totalRealisasi,
+    //         'sisa' => $sisa,
+    //         'persentasi' => $presentasi,
+    //     ]);
+    // }
+
     public function getRealisasiDanSisaPendapatan(Request $request): JsonResponse
     {
         $tahun = $request->input('tahun', now()->year);
-        $tanggal = $request->input(key: 'tanggal');
+        $tanggal = $request->input('tanggal');
+        $kodeSatker = $request->input('kodeSatker'); // optional
 
-        // Total pagu from DIPA Pendapatan
-        $totalPagu = DB::table('tbl_dipa_pendapatan')
+        // Query builder for DIPA Pendapatan
+        $dipaQuery = DB::table('tbl_dipa_pendapatan')
             ->whereYear('tanggal_omspan', $tahun)
-            ->where('tanggal_omspan', $tanggal)
-            ->sum('amount');
+            ->where('tanggal_omspan', $tanggal);
 
-        // Total realisasi until the given date and year from Realisasi Pendapatan
-        $totalRealisasi = DB::table('tbl_realisasi_pendapatan')
+        if ($kodeSatker) {
+            $dipaQuery->where('kdsatker', $kodeSatker);
+        }
+
+        $totalPagu = $dipaQuery->sum('amount');
+
+        // Query builder for Realisasi Pendapatan
+        $realisasiQuery = DB::table('tbl_realisasi_pendapatan')
             ->whereYear('tanggal_omspan', $tahun)
-            ->where('tanggal_omspan', $tanggal)
-            ->sum('amount');
+            ->where('tanggal_omspan', $tanggal);
 
-        // Calculate remaining amount (sisa)
+        if ($kodeSatker) {
+            $realisasiQuery->where('kdsatker', $kodeSatker);
+        }
+
+        $totalRealisasi = $realisasiQuery->sum('amount');
+
+        // Calculate sisa and percentage
         $sisa = $totalPagu - $totalRealisasi;
-
-        // Calculate the percentage (presentasi)
         $presentasi = $totalPagu > 0 ? round(($totalRealisasi / $totalPagu) * 100, 2) : 0;
 
         return response()->json([
@@ -406,6 +448,7 @@ class ManagerialController extends Controller
             'persentasi' => $presentasi,
         ]);
     }
+
 
     public function getRealisasiGrouped(Request $request)
     {
