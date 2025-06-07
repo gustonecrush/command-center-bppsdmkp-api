@@ -223,33 +223,67 @@ class ManagerialController extends Controller
 
 
 
+    // public function getRealisasiDanSisa(Request $request): JsonResponse
+    // {
+    //     $tahun = $request->input('tahun', now()->year);
+    //     $tanggal = $request->input('tanggal');
+
+    //     // Total pagu from DIPA
+    //     $totalPagu = DB::table('tbl_dipa_belanja')
+    //         ->whereYear('tanggal_omspan', $tahun)
+    //         ->where('tanggal_omspan', $tanggal)
+    //         ->sum('amount');
+
+    //     // Total realisasi until the given date and year
+    //     $totalRealisasi = DB::table('tbl_realisasi_belanja')
+    //         ->whereYear('tanggal_omspan', $tahun)
+    //         ->where('tanggal_omspan', $tanggal)
+    //         ->sum('amount');
+
+    //     $sisa = $totalPagu - $totalRealisasi;
+
+    //     return response()->json([
+    //         'tahun' => (int) $tahun,
+    //         'tanggal' => $tanggal,
+    //         'pagu' => $totalPagu,
+    //         'realisasi' => $totalRealisasi,
+    //         'sisa' => $sisa,
+    //     ]);
+    // }
+
     public function getRealisasiDanSisa(Request $request): JsonResponse
     {
         $tahun = $request->input('tahun', now()->year);
         $tanggal = $request->input('tanggal');
+        $kodeSatker = $request->input('kodeSatker');
 
-        // Total pagu from DIPA
-        $totalPagu = DB::table('tbl_dipa_belanja')
+        $queryPagu = DB::table('tbl_dipa_belanja')
             ->whereYear('tanggal_omspan', $tahun)
-            ->where('tanggal_omspan', $tanggal)
-            ->sum('amount');
+            ->where('tanggal_omspan', $tanggal);
 
-        // Total realisasi until the given date and year
-        $totalRealisasi = DB::table('tbl_realisasi_belanja')
+        $queryRealisasi = DB::table('tbl_realisasi_belanja')
             ->whereYear('tanggal_omspan', $tahun)
-            ->where('tanggal_omspan', $tanggal)
-            ->sum('amount');
+            ->where('tanggal_omspan', $tanggal);
 
+        if ($kodeSatker) {
+            $queryPagu->where('kdsatker', $kodeSatker);
+            $queryRealisasi->where('kdsatker', $kodeSatker);
+        }
+
+        $totalPagu = $queryPagu->sum('amount');
+        $totalRealisasi = $queryRealisasi->sum('amount');
         $sisa = $totalPagu - $totalRealisasi;
 
         return response()->json([
             'tahun' => (int) $tahun,
             'tanggal' => $tanggal,
+            'kode_satker' => $kodeSatker,
             'pagu' => $totalPagu,
             'realisasi' => $totalRealisasi,
             'sisa' => $sisa,
         ]);
     }
+
 
     public function getRincianRealisasiAnggaran(Request $request): JsonResponse
     {
