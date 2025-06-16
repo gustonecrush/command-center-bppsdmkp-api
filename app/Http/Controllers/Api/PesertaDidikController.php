@@ -21,6 +21,16 @@ class PesertaDidikController extends Controller
         return response()->json($pesertaDidik);
     }
 
+    public function getStudentWithLocation()
+    {
+        $data = DB::table('peserta_didiks as pd')
+            ->select('pd.nama_lengkap', 'mk.latitude', 'mk.longitude')
+            ->leftJoin('mtr_kabupatens as mk', DB::raw('CAST(pd.id_kabupaten AS CHAR)'), '=', 'mk.id')
+            ->get();
+
+        return response()->json($data);
+    }
+
     // public function summary(Request $request)
     // {
     //     // Get the satdik_id from the query parameters

@@ -30,11 +30,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::get('/pendidiks', [PendidikController::class, 'index']);
 Route::get('/pendidiks/summary', [PendidikController::class, 'summary']);
 
+
 Route::get('/tenaga-kependidikans', [TenagaKependidikanController::class, 'index']);
 Route::get('/tenaga-kependidikans/summary', [TenagaKependidikanController::class, 'summary']);
 
 
 Route::get('/peserta-didiks', [PesertaDidikController::class, 'index']);
+Route::get('/peserta-didiks/getStudentWithLocation', [PesertaDidikController::class, 'getStudentWithLocation']);
 Route::get('/alumnis', [AlumniController::class, 'index']);
 Route::get('/alumnis/summary', [AlumniController::class, 'summary']);
 Route::get('/peserta-didiks/summary', [PesertaDidikController::class, 'summary']);
