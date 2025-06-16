@@ -23,7 +23,7 @@ class PesertaDidikController extends Controller
 
     public function getStudentWithLocation()
     {
-        $data = DB::table('peserta_didikls as pd')
+        $data = DB::table('peserta_didiks as pd')
             ->select('pd.nama_lengkap', 'mk.latitude', 'mk.longitude')
             ->leftJoin('mtr_kabupatens as mk', DB::raw("CAST(pd.id_kabupaten AS CHAR) COLLATE utf8mb4_general_ci"), '=', 'mk.id')
             ->get();
