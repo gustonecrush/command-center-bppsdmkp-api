@@ -748,34 +748,50 @@ class ManagerialController extends Controller
             '53' => 'Belanja Modal',
         ];
 
-        // Step 1: Create base structure with all dates in the month
-        $start = Carbon::createFromDate($year, $month, 1);
-        $end = $start->copy()->endOfMonth();
-
-        $grouped = [];
-        for ($date = $start->copy(); $date <= $end; $date->addDay()) {
-            $dateStr = $date->toDateString();
-            $grouped[$dateStr] = [
-                'date' => $dateStr,
-                'Belanja Pegawai' => 0,
-                'Belanja Barang dan Jasa' => 0,
-                'Belanja Modal' => 0,
-                'Lainnya' => 0,
-            ];
-        }
-
-        // Step 2: Insert actual data into the structure
+        // Step 1: Organize DB results by date
+        $rawGrouped = [];
         foreach ($results as $row) {
             $date = $row->date;
             $type = $akunLabels[$row->kode_akun] ?? 'Lainnya';
 
-            if (isset($grouped[$date])) {
-                $grouped[$date][$type] += (float) $row->realisasi_amount;
+            if (!isset($rawGrouped[$date])) {
+                $rawGrouped[$date] = [
+                    'Belanja Pegawai' => 0,
+                    'Belanja Barang dan Jasa' => 0,
+                    'Belanja Modal' => 0,
+                    'Lainnya' => 0,
+                ];
             }
+
+            $rawGrouped[$date][$type] += (float) $row->realisasi_amount;
         }
 
-        return response()->json(array_values($grouped));
+        // Step 2: Generate full month and propagate last known data
+        $start = Carbon::createFromDate($year, $month, 1);
+        $end = $start->copy()->endOfMonth();
+
+        $lastKnown = [
+            'Belanja Pegawai' => 0,
+            'Belanja Barang dan Jasa' => 0,
+            'Belanja Modal' => 0,
+            'Lainnya' => 0,
+        ];
+
+        $final = [];
+
+        for ($date = $start->copy(); $date <= $end; $date->addDay()) {
+            $dateStr = $date->toDateString();
+
+            if (isset($rawGrouped[$dateStr])) {
+                $lastKnown = $rawGrouped[$dateStr]; // update latest known values
+            }
+
+            $final[] = array_merge(['date' => $dateStr], $lastKnown);
+        }
+
+        return response()->json($final);
     }
+
 
 
     // public function getRealisasiPendapatanPerDay(Request $request)
