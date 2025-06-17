@@ -729,7 +729,6 @@ class ManagerialController extends Controller
             return response()->json(['error' => 'month and year are required'], 400);
         }
 
-        // Get all realisasi data from DB
         $results = DB::table('tbl_realisasi_belanja')
             ->selectRaw('
             DATE(tanggal_omspan) as date,
@@ -748,14 +747,15 @@ class ManagerialController extends Controller
             '53' => 'Belanja Modal',
         ];
 
-        // Step 1: Organize DB results by date
-        $rawGrouped = [];
+        // Step 1: Organize actual data per date
+        $actualData = [];
         foreach ($results as $row) {
             $date = $row->date;
             $type = $akunLabels[$row->kode_akun] ?? 'Lainnya';
 
-            if (!isset($rawGrouped[$date])) {
-                $rawGrouped[$date] = [
+            if (!isset($actualData[$date])) {
+                $actualData[$date] = [
+                    'date' => $date,
                     'Belanja Pegawai' => 0,
                     'Belanja Barang dan Jasa' => 0,
                     'Belanja Modal' => 0,
@@ -763,34 +763,41 @@ class ManagerialController extends Controller
                 ];
             }
 
-            $rawGrouped[$date][$type] += (float) $row->realisasi_amount;
+            $actualData[$date][$type] += (float) $row->realisasi_amount;
         }
 
-        // Step 2: Generate full month and propagate last known data
+        // Step 2: Determine last actual date
+        $actualDates = array_keys($actualData);
+        $lastActualDate = !empty($actualDates) ? max($actualDates) : null;
+
         $start = Carbon::createFromDate($year, $month, 1);
         $end = $start->copy()->endOfMonth();
 
-        $lastKnown = [
+        $default = [
             'Belanja Pegawai' => 0,
             'Belanja Barang dan Jasa' => 0,
             'Belanja Modal' => 0,
             'Lainnya' => 0,
         ];
 
-        $final = [];
+        $lastKnown = $default;
+        $grouped = [];
 
         for ($date = $start->copy(); $date <= $end; $date->addDay()) {
             $dateStr = $date->toDateString();
 
-            if (isset($rawGrouped[$dateStr])) {
-                $lastKnown = $rawGrouped[$dateStr]; // update latest known values
+            if (isset($actualData[$dateStr])) {
+                $lastKnown = $actualData[$dateStr];
             }
 
-            $final[] = array_merge(['date' => $dateStr], $lastKnown);
+            $useLastKnown = $dateStr <= $lastActualDate;
+
+            $grouped[] = array_merge(['date' => $dateStr], $useLastKnown ? $lastKnown : $default);
         }
 
-        return response()->json($final);
+        return response()->json($grouped);
     }
+
 
 
 
