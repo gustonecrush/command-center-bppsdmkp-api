@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class ManagerialController extends Controller
 {
@@ -717,6 +718,8 @@ class ManagerialController extends Controller
         return response()->json($sorted);
     }
 
+
+
     public function getRealisasiBelanjaPerDay(Request $request)
     {
         $year = $request->input('year');
@@ -726,20 +729,18 @@ class ManagerialController extends Controller
             return response()->json(['error' => 'month and year are required'], 400);
         }
 
+        // Get all realisasi data from DB
         $results = DB::table('tbl_realisasi_belanja')
             ->selectRaw('
-                DATE(tanggal_omspan) as date,
-                LEFT(akun, 2) as kode_akun,
-                SUM(amount) as realisasi_amount
-            ')
+            DATE(tanggal_omspan) as date,
+            LEFT(akun, 2) as kode_akun,
+            SUM(amount) as realisasi_amount
+        ')
             ->whereYear('tanggal_omspan', $year)
             ->whereMonth('tanggal_omspan', $month)
             ->groupBy(DB::raw('DATE(tanggal_omspan), LEFT(akun, 2)'))
             ->orderBy('date')
             ->get();
-
-        // Map results into format grouped by date with types
-        $grouped = [];
 
         $akunLabels = [
             '51' => 'Belanja Pegawai',
@@ -747,25 +748,35 @@ class ManagerialController extends Controller
             '53' => 'Belanja Modal',
         ];
 
+        // Step 1: Create base structure with all dates in the month
+        $start = Carbon::createFromDate($year, $month, 1);
+        $end = $start->copy()->endOfMonth();
+
+        $grouped = [];
+        for ($date = $start->copy(); $date <= $end; $date->addDay()) {
+            $dateStr = $date->toDateString();
+            $grouped[$dateStr] = [
+                'date' => $dateStr,
+                'Belanja Pegawai' => 0,
+                'Belanja Barang dan Jasa' => 0,
+                'Belanja Modal' => 0,
+                'Lainnya' => 0,
+            ];
+        }
+
+        // Step 2: Insert actual data into the structure
         foreach ($results as $row) {
             $date = $row->date;
             $type = $akunLabels[$row->kode_akun] ?? 'Lainnya';
 
-            if (!isset($grouped[$date])) {
-                $grouped[$date] = [
-                    'date' => $date,
-                    'Belanja Pegawai' => 0,
-                    'Belanja Barang dan Jasa' => 0,
-                    'Belanja Modal' => 0,
-                    'Lainnya' => 0,
-                ];
+            if (isset($grouped[$date])) {
+                $grouped[$date][$type] += (float) $row->realisasi_amount;
             }
-
-            $grouped[$date][$type] += (float) $row->realisasi_amount;
         }
 
         return response()->json(array_values($grouped));
     }
+
 
     // public function getRealisasiPendapatanPerDay(Request $request)
     // {
