@@ -729,6 +729,13 @@ class ManagerialController extends Controller
             return response()->json(['error' => 'month and year are required'], 400);
         }
 
+        $akunLabels = [
+            '51' => 'Belanja Pegawai',
+            '52' => 'Belanja Barang dan Jasa',
+            '53' => 'Belanja Modal',
+        ];
+
+        // Step 1: Get all data for the requested month
         $results = DB::table('tbl_realisasi_belanja')
             ->selectRaw('
             DATE(tanggal_omspan) as date,
@@ -741,13 +748,7 @@ class ManagerialController extends Controller
             ->orderBy('date')
             ->get();
 
-        $akunLabels = [
-            '51' => 'Belanja Pegawai',
-            '52' => 'Belanja Barang dan Jasa',
-            '53' => 'Belanja Modal',
-        ];
-
-        // Step 1: Organize actual data per date
+        // Step 2: Organize data by date
         $actualData = [];
         foreach ($results as $row) {
             $date = $row->date;
@@ -766,13 +767,11 @@ class ManagerialController extends Controller
             $actualData[$date][$type] += (float) $row->realisasi_amount;
         }
 
-        // Step 2: Determine last actual date
-        $actualDates = array_keys($actualData);
-        $lastActualDate = !empty($actualDates) ? max($actualDates) : null;
+        // Step 3: Check if first date of the month has data
+        $startOfMonth = Carbon::createFromDate($year, $month, 1)->toDateString();
+        $hasFirstDayData = isset($actualData[$startOfMonth]);
 
-        $start = Carbon::createFromDate($year, $month, 1);
-        $end = $start->copy()->endOfMonth();
-
+        // Step 4: If no data on the first date, get last available date from previous month
         $default = [
             'Belanja Pegawai' => 0,
             'Belanja Barang dan Jasa' => 0,
@@ -781,6 +780,51 @@ class ManagerialController extends Controller
         ];
 
         $lastKnown = $default;
+
+        if (!$hasFirstDayData) {
+            $previousMonth = Carbon::createFromDate($year, $month, 1)->subMonth();
+            $previousData = DB::table('tbl_realisasi_belanja')
+                ->selectRaw('
+                DATE(tanggal_omspan) as date,
+                LEFT(akun, 2) as kode_akun,
+                SUM(amount) as realisasi_amount
+            ')
+                ->whereYear('tanggal_omspan', $previousMonth->year)
+                ->whereMonth('tanggal_omspan', $previousMonth->month)
+                ->groupBy(DB::raw('DATE(tanggal_omspan), LEFT(akun, 2)'))
+                ->orderByDesc('date')
+                ->get();
+
+            $prevActualData = [];
+            foreach ($previousData as $row) {
+                $date = $row->date;
+                $type = $akunLabels[$row->kode_akun] ?? 'Lainnya';
+
+                if (!isset($prevActualData[$date])) {
+                    $prevActualData[$date] = [
+                        'date' => $date,
+                        'Belanja Pegawai' => 0,
+                        'Belanja Barang dan Jasa' => 0,
+                        'Belanja Modal' => 0,
+                        'Lainnya' => 0,
+                    ];
+                }
+
+                $prevActualData[$date][$type] += (float) $row->realisasi_amount;
+            }
+
+            if (!empty($prevActualData)) {
+                $lastPrevDate = max(array_keys($prevActualData));
+                $lastKnown = $prevActualData[$lastPrevDate];
+            }
+        }
+
+        // Step 5: Build final result per day using forward fill
+        $actualDates = array_keys($actualData);
+        $lastActualDate = !empty($actualDates) ? max($actualDates) : null;
+
+        $start = Carbon::createFromDate($year, $month, 1);
+        $end = $start->copy()->endOfMonth();
         $grouped = [];
 
         for ($date = $start->copy(); $date <= $end; $date->addDay()) {
@@ -797,6 +841,7 @@ class ManagerialController extends Controller
 
         return response()->json($grouped);
     }
+
 
 
 
