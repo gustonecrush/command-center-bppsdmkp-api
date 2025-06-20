@@ -733,7 +733,7 @@ class ManagerialController extends Controller
             '53' => 'Belanja Modal',
         ];
 
-        // Step 1: Get all data for the requested month
+        // Get data for this month
         $results = DB::table('tbl_realisasi_belanja')
             ->selectRaw('
             DATE(tanggal_omspan) as date,
@@ -746,7 +746,7 @@ class ManagerialController extends Controller
             ->orderBy('date')
             ->get();
 
-        // Step 2: Organize data by date
+        // Organize actual data
         $actualData = [];
         foreach ($results as $row) {
             $date = $row->date;
@@ -774,13 +774,14 @@ class ManagerialController extends Controller
 
         $start = Carbon::createFromDate($year, $month, 1);
         $end = $start->copy()->endOfMonth();
+        $today = Carbon::today();
 
         $startStr = $start->toDateString();
         $endStr = $end->toDateString();
 
         $lastKnown = $default;
 
-        // Step 3: Fallback if no data on first day → check previous month
+        // If first day has no data, fallback to last known from previous month
         if (!isset($actualData[$startStr])) {
             $previousMonth = $start->copy()->subMonth();
             $previousData = DB::table('tbl_realisasi_belanja')
@@ -819,9 +820,10 @@ class ManagerialController extends Controller
             }
         }
 
-        // Step 4: Build final result per day using forward-fill
+        // Get max date that has actual data in current month
         $actualDates = array_keys($actualData);
-        sort($actualDates); // ensure ascending
+        sort($actualDates);
+        $lastActualDate = !empty($actualDates) ? max($actualDates) : null;
 
         $grouped = [];
 
@@ -830,19 +832,26 @@ class ManagerialController extends Controller
 
             if (isset($actualData[$dateStr])) {
                 $lastKnown = $actualData[$dateStr];
+                $grouped[] = array_merge(['date' => $dateStr], $lastKnown);
+            } else {
+                // Show real data up to last available date
+                if ($lastActualDate && $dateStr <= $lastActualDate) {
+                    $grouped[] = array_merge(['date' => $dateStr], $lastKnown);
+                } else {
+                    $grouped[] = array_merge(['date' => $dateStr], $default);
+                }
             }
-
-            $grouped[] = array_merge(['date' => $dateStr], $lastKnown);
         }
 
-        // Step 5: Ensure last day has data → if not, backtrack to previous known value
-        if (!isset($actualData[$endStr])) {
-            for ($backDate = $end->copy()->subDay(); $backDate >= $start; $backDate->subDay()) {
-                $backDateStr = $backDate->toDateString();
-                if (isset($actualData[$backDateStr])) {
-                    // Replace last item in grouped array with backtracked value
-                    array_pop($grouped); // remove last entry
-                    $grouped[] = array_merge(['date' => $endStr], $actualData[$backDateStr]);
+        // Final step: if viewing a past month and last day has no data, backtrack
+        $isPastMonth = $end->lt($today->startOfMonth());
+        if ($isPastMonth && !isset($actualData[$endStr])) {
+            for ($back = $end->copy()->subDay(); $back >= $start; $back->subDay()) {
+                $backStr = $back->toDateString();
+                if (isset($actualData[$backStr])) {
+                    // Replace last entry (last date) with backfilled data
+                    array_pop($grouped);
+                    $grouped[] = array_merge(['date' => $endStr], $actualData[$backStr]);
                     break;
                 }
             }
