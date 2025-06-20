@@ -718,8 +718,6 @@ class ManagerialController extends Controller
         return response()->json($sorted);
     }
 
-
-
     public function getRealisasiBelanjaPerDay(Request $request)
     {
         $year = $request->input('year');
@@ -767,11 +765,6 @@ class ManagerialController extends Controller
             $actualData[$date][$type] += (float) $row->realisasi_amount;
         }
 
-        // Step 3: Check if first date of the month has data
-        $startOfMonth = Carbon::createFromDate($year, $month, 1)->toDateString();
-        $hasFirstDayData = isset($actualData[$startOfMonth]);
-
-        // Step 4: If no data on the first date, get last available date from previous month
         $default = [
             'Belanja Pegawai' => 0,
             'Belanja Barang dan Jasa' => 0,
@@ -779,10 +772,17 @@ class ManagerialController extends Controller
             'Lainnya' => 0,
         ];
 
+        $start = Carbon::createFromDate($year, $month, 1);
+        $end = $start->copy()->endOfMonth();
+
+        $startStr = $start->toDateString();
+        $endStr = $end->toDateString();
+
         $lastKnown = $default;
 
-        if (!$hasFirstDayData) {
-            $previousMonth = Carbon::createFromDate($year, $month, 1)->subMonth();
+        // Step 3: Fallback if no data on first day → check previous month
+        if (!isset($actualData[$startStr])) {
+            $previousMonth = $start->copy()->subMonth();
             $previousData = DB::table('tbl_realisasi_belanja')
                 ->selectRaw('
                 DATE(tanggal_omspan) as date,
@@ -819,12 +819,10 @@ class ManagerialController extends Controller
             }
         }
 
-        // Step 5: Build final result per day using forward fill
+        // Step 4: Build final result per day using forward-fill
         $actualDates = array_keys($actualData);
-        $lastActualDate = !empty($actualDates) ? max($actualDates) : null;
+        sort($actualDates); // ensure ascending
 
-        $start = Carbon::createFromDate($year, $month, 1);
-        $end = $start->copy()->endOfMonth();
         $grouped = [];
 
         for ($date = $start->copy(); $date <= $end; $date->addDay()) {
@@ -834,13 +832,25 @@ class ManagerialController extends Controller
                 $lastKnown = $actualData[$dateStr];
             }
 
-            $useLastKnown = $dateStr <= $lastActualDate;
+            $grouped[] = array_merge(['date' => $dateStr], $lastKnown);
+        }
 
-            $grouped[] = array_merge(['date' => $dateStr], $useLastKnown ? $lastKnown : $default);
+        // Step 5: Ensure last day has data → if not, backtrack to previous known value
+        if (!isset($actualData[$endStr])) {
+            for ($backDate = $end->copy()->subDay(); $backDate >= $start; $backDate->subDay()) {
+                $backDateStr = $backDate->toDateString();
+                if (isset($actualData[$backDateStr])) {
+                    // Replace last item in grouped array with backtracked value
+                    array_pop($grouped); // remove last entry
+                    $grouped[] = array_merge(['date' => $endStr], $actualData[$backDateStr]);
+                    break;
+                }
+            }
         }
 
         return response()->json($grouped);
     }
+
 
 
 
