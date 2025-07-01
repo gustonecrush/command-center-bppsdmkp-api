@@ -21,14 +21,34 @@ class PesertaDidikController extends Controller
         return response()->json($pesertaDidik);
     }
 
-    public function getStudentWithLocation()
+    public function getStudentWithLocation(Request $request)
     {
-        $data = DB::table('peserta_didiks as pd')
+        $tingkatPendidikan = $request->input('tingkatPendidikan');
+
+        $query = DB::table('peserta_didiks as pd')
             ->select('pd.nama_lengkap', 'pd.id_peserta_didik', 'mk.latitude', 'mk.longitude')
-            ->leftJoin('mtr_kabupatens as mk', DB::raw("CAST(pd.id_kabupaten AS CHAR) COLLATE utf8mb4_general_ci"), '=', 'mk.id')
-            ->get();
+            ->leftJoin('mtr_kabupatens as mk', DB::raw("CAST(pd.id_kabupaten AS CHAR) COLLATE utf8mb4_general_ci"), '=', 'mk.id');
+
+        // ⬇️ Apply filter based on tingkatPendidikan if provided
+        if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
+            $query->join('satuan_pendidikan as sp', 'pd.id_satdik', '=', 'sp.RowID');
+
+            if ($tingkatPendidikan === 'Menengah') {
+                $query->where('sp.nama', 'LIKE', '%Sekolah%');
+            } elseif ($tingkatPendidikan === 'Tinggi') {
+                $query->where(function ($q2) {
+                    $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                        ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                        ->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                });
+            }
+        }
+
+        $data = $query->get();
+
         return response()->json($data);
     }
+
 
     // public function summary(Request $request)
     // {
