@@ -197,6 +197,18 @@ class PesertaDidikController extends Controller
                 ->orderByDesc('count')
                 ->get();
 
+            $jenjang_pendidikan_count = (clone $query)
+                ->selectRaw(expression: 'jenjang_pendidikan, COUNT(*) as count')
+                ->groupBy('jenjang_pendidikan')
+                ->orderByDesc('count')
+                ->get();
+
+            $tingkat_count = (clone $query)
+                ->selectRaw(expression: 'tingkat, COUNT(*) as count')
+                ->groupBy('tingkat')
+                ->orderByDesc('count')
+                ->get();
+
             $prodis_count = (clone $query)
                 ->join('mtr_program_studis', 'peserta_didiks.id_program_studi', '=', 'mtr_program_studis.id')
                 ->selectRaw('mtr_program_studis.program_studi_singkatan, COUNT(*) as count')
@@ -317,6 +329,8 @@ class PesertaDidikController extends Controller
                 'origin_count' => $origin_count,
                 'prodis_count' => $prodis_count,
                 'province_counts' => $province_counts,
+                'jenjang_counts' => $jenjang_pendidikan_count,
+                'tingkat_counts' => $tingkat_count,
                 'religion_counts' => $religion_counts,
                 'gender_counts' => $gender_counts,
                 'nama_satdik_count' => $nama_satdik_count,
