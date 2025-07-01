@@ -172,7 +172,7 @@ class PesertaDidikController extends Controller
             // }
 
             if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
-                $query->join('satuan_pendidikan as sp', 'peserta_didiks.satdik_id', '=', 'sp.RowID');
+                $query->join('satuan_pendidikan as sp', 'peserta_didiks.id_satdik', '=', 'sp.RowID');
 
                 if ($tingkatPendidikan === 'Menengah') {
                     $query->where('sp.nama', 'LIKE', '%Sekolah%');
