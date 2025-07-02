@@ -1135,7 +1135,8 @@ class ManagerialController extends Controller
     public function getPBJGroupedByAkun(Request $request)
     {
         $tanggal = $request->query('tanggal');
-        $tahun = $request->query('tahun');
+        $tahun = $request->input('tahun', now()->year);
+        $kdsatker = $request->query('kdsatker');
 
         $akunLabels = [
             '52' => 'Belanja Barang dan Jasa',
@@ -1156,6 +1157,10 @@ class ManagerialController extends Controller
 
         if ($tahun) {
             $query->whereYear('tanggal_omspan', $tahun);
+        }
+
+        if ($kdsatker) {
+            $query->where('kdsatker', $kdsatker); // New condition
         }
 
         $data = $query
