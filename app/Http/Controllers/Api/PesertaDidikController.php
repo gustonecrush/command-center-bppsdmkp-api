@@ -218,6 +218,12 @@ class PesertaDidikController extends Controller
                 ->orderByDesc('count')
                 ->get();
 
+            $level_count = (clone $query)
+                ->selectRaw('level, COUNT(*) as count')
+                ->groupBy('level')
+                ->orderByDesc('count')
+                ->get();
+
             $jenjang_pendidikan_count = (clone $query)
                 ->selectRaw(expression: 'jenjang_pendidikan, COUNT(*) as count')
                 ->groupBy('jenjang_pendidikan')
@@ -348,6 +354,7 @@ class PesertaDidikController extends Controller
             return response()->json([
                 'parent_job_count' => $parent_job_count,
                 'origin_count' => $origin_count,
+                'level_count' => $level_count,
                 'prodis_count' => $prodis_count,
                 'province_counts' => $province_counts,
                 'jenjang_counts' => $jenjang_pendidikan_count,
