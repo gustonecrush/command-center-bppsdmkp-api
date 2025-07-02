@@ -166,11 +166,12 @@ class PesertaDidikController extends Controller
             $tingkatPendidikan = $request->query('tingkatPendidikan');
 
             $satdikNama = null;
+            $query = PesertaDidik::query();
             if ($satdik_id) {
-                $satdikNama = DB::table('satuan_pendidikan')->where('RowID', $satdik_id)->value('nama');
+                $query->where('peserta_didiks.id_satdik', $satdik_id);
             }
 
-            $query = PesertaDidik::query();
+
 
             // $query = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama');
 
