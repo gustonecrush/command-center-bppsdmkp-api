@@ -62,13 +62,10 @@ class AlumniController extends Controller
             }
         });
 
-        if ($tahunLulus) {
+        if ($tahunLulus && $tahunLulus !== 'All') {
             $query->where('alumnis.tahun_lulus', $tahunLulus);
         }
 
-
-
-        // Count other columns (tidak diubah)
         $absorption_counts = $query->clone()
             ->select('absorption')
             ->groupBy('absorption')
