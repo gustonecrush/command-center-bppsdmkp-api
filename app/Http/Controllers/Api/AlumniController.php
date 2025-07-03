@@ -40,6 +40,7 @@ class AlumniController extends Controller
     public function summary(Request $request)
     {
         $satdik_id = $request->query('satdik_id');
+        $tahunLulus = $request->query('tahun_lulus');
         $tingkatPendidikan = $request->query('tingkatPendidikan');
 
         $query = Alumni::query();
@@ -61,9 +62,11 @@ class AlumniController extends Controller
             }
         });
 
-        if ($satdik_id) {
-            $query->where('id_satdik', $satdik_id);
+        if ($tahunLulus) {
+            $query->where('alumnis.tahun_lulus', $tahunLulus);
         }
+
+
 
         // Count other columns (tidak diubah)
         $absorption_counts = $query->clone()
