@@ -48,6 +48,10 @@ class AlumniController extends Controller
             $query->where('alumnis.id_satdik', $satdik_id);
         }
 
+        if ($tahunLulus && $tahunLulus !== 'All') {
+            $query->where('alumnis.tahun_lulus', $tahunLulus);
+        }
+
         $query->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
             $q->join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID');
 
@@ -62,9 +66,7 @@ class AlumniController extends Controller
             }
         });
 
-        if ($tahunLulus && $tahunLulus !== 'All') {
-            $query->where('alumnis.tahun_lulus', $tahunLulus);
-        }
+
 
         $absorption_counts = $query->clone()
             ->select('absorption')
