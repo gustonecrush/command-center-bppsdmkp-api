@@ -43,13 +43,16 @@ class AlumniController extends Controller
         $tingkatPendidikan = $request->query('tingkatPendidikan');
 
         $query = Alumni::query();
+        if ($satdik_id) {
+            $query->where('alumnis.id_satdik', $satdik_id);
+        }
 
         $query->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
             $q->join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID');
 
-            if ($tingkatPendidikan === 'SUPM') {
+            if ($tingkatPendidikan === 'Menengah') {
                 $q->where('sp.nama', 'LIKE', '%Sekolah%');
-            } elseif ($tingkatPendidikan === 'Politeknik') {
+            } elseif ($tingkatPendidikan === 'Tinggi') {
                 $q->where(function ($q2) {
                     $q2->where('sp.nama', 'LIKE', '%Politeknik%')
                         ->orWhere('sp.nama', 'LIKE', '%Akademi%')
@@ -149,9 +152,9 @@ class AlumniController extends Controller
             })
             ->whereIn('sp.nama', $kampusAUP)
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
-                if ($tingkatPendidikan === 'SUPM') {
+                if ($tingkatPendidikan === 'Menengah') {
                     $q->where('sp.nama', 'LIKE', '%Sekolah%');
-                } elseif ($tingkatPendidikan === 'Politeknik') {
+                } elseif ($tingkatPendidikan === 'Tinggi') {
                     $q->where(function ($q2) {
                         $q2->where('sp.nama', 'LIKE', '%Politeknik%')
                             ->orWhere('sp.nama', 'LIKE', '%Akademi%')
@@ -170,9 +173,9 @@ class AlumniController extends Controller
             })
             ->whereNotIn('sp.nama', $kampusAUP)
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
-                if ($tingkatPendidikan === 'SUPM') {
+                if ($tingkatPendidikan === 'Menengah') {
                     $q->where('sp.nama', 'LIKE', '%Sekolah%');
-                } elseif ($tingkatPendidikan === 'Politeknik') {
+                } elseif ($tingkatPendidikan === 'Tinggi') {
                     $q->where(function ($q2) {
                         $q2->where('sp.nama', 'LIKE', '%Politeknik%')
                             ->orWhere('sp.nama', 'LIKE', '%Akademi%')
