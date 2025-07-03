@@ -49,7 +49,7 @@ class AlumniController extends Controller
         }
 
         if ($tahunLulus && $tahunLulus !== 'All') {
-            $query->where('alumnis.tahun_lulus', $tahunLulus);
+            $query->where('alumnis.tahun_lulus', 'LIKE', "%$tahunLulus%");
         }
 
         $query->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
