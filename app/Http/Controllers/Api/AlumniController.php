@@ -148,9 +148,32 @@ class AlumniController extends Controller
         ];
 
         // Query jumlah alumni untuk kampus Politeknik AUP (digabung)
+        // $politeknikAupCount = Alumni::join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID')
+        //     ->when($satdik_id, function ($q) use ($satdik_id) {
+        //         $q->where('alumnis.id_satdik', $satdik_id);
+        //     })
+        //     ->whereIn('sp.nama', $kampusAUP)
+        //     ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+        //         if ($tingkatPendidikan === 'Menengah') {
+        //             $q->where('sp.nama', 'LIKE', '%Sekolah%');
+        //         } elseif ($tingkatPendidikan === 'Tinggi') {
+        //             $q->where(function ($q2) {
+        //                 $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+        //                     ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+        //                     ->orWhere('sp.nama', 'LIKE', '%Pasca%');
+        //             });
+        //         }
+        //     })
+        //     ->selectRaw('"Politeknik AUP" as nama_satdik, COUNT(*) as count')
+        //     ->groupBy('nama_satdik')
+        //     ->first();
+
         $politeknikAupCount = Alumni::join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID')
             ->when($satdik_id, function ($q) use ($satdik_id) {
                 $q->where('alumnis.id_satdik', $satdik_id);
+            })
+            ->when($tahunLulus && $tahunLulus !== 'All', function ($q) use ($tahunLulus) {
+                $q->where('alumnis.tahun_lulus', 'LIKE', "%$tahunLulus%");
             })
             ->whereIn('sp.nama', $kampusAUP)
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
@@ -168,10 +191,35 @@ class AlumniController extends Controller
             ->groupBy('nama_satdik')
             ->first();
 
+
         // Query kampus selain Politeknik AUP
+        // $otherSatdikCounts = Alumni::join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID')
+        //     ->when($satdik_id, function ($q) use ($satdik_id) {
+        //         $q->where('alumnis.id_satdik', $satdik_id);
+        //     })
+        //     ->whereNotIn('sp.nama', $kampusAUP)
+        //     ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+        //         if ($tingkatPendidikan === 'Menengah') {
+        //             $q->where('sp.nama', 'LIKE', '%Sekolah%');
+        //         } elseif ($tingkatPendidikan === 'Tinggi') {
+        //             $q->where(function ($q2) {
+        //                 $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+        //                     ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+        //                     ->orWhere('sp.nama', 'LIKE', '%Pasca%');
+        //             });
+        //         }
+        //     })
+        //     ->selectRaw('sp.nama as nama_satdik, COUNT(*) as count')
+        //     ->groupBy('sp.nama')
+        //     ->orderByDesc('count')
+        //     ->get();
+
         $otherSatdikCounts = Alumni::join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID')
             ->when($satdik_id, function ($q) use ($satdik_id) {
                 $q->where('alumnis.id_satdik', $satdik_id);
+            })
+            ->when($tahunLulus && $tahunLulus !== 'All', function ($q) use ($tahunLulus) {
+                $q->where('alumnis.tahun_lulus', 'LIKE', "%$tahunLulus%");
             })
             ->whereNotIn('sp.nama', $kampusAUP)
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
@@ -189,6 +237,7 @@ class AlumniController extends Controller
             ->groupBy('sp.nama')
             ->orderByDesc('count')
             ->get();
+
 
         // Gabungkan hasil politeknik AUP di depan, lalu kampus lain
         $nama_satdik_count = $otherSatdikCounts;
