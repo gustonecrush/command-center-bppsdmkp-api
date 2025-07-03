@@ -127,6 +127,7 @@ class AlumniController extends Controller
             ->groupBy('bidang_pekerjaan')
             ->selectRaw('bidang_pekerjaan, COUNT(*) as count')
             ->orderByDesc('count')
+            ->take(10) // or ->limit(10)
             ->get();
 
 
