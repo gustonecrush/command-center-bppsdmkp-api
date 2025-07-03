@@ -40,7 +40,7 @@ class AlumniController extends Controller
     public function summary(Request $request)
     {
         $satdik_id = $request->query('satdik_id');
-        $tahunLulus = $request->query('tahun_lulus');
+        $tahunLulus = $request->query('selectedYear');
         $tingkatPendidikan = $request->query('tingkatPendidikan');
 
         $query = Alumni::query();
