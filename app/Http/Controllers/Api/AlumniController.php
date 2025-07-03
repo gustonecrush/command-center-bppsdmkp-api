@@ -15,10 +15,10 @@ class AlumniController extends Controller
 
         $alumni = Alumni::query()
             ->when($satdikId, function ($query) use ($satdikId) {
-                return $query->where('satdik_id', $satdikId);
+                return $query->where('id_satdik', $satdikId);
             })
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
-                $q->join('satuan_pendidikan as sp', 'alumnis.satdik_id', '=', 'sp.RowID');
+                $q->join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID');
 
                 if ($tingkatPendidikan === 'SUPM') {
                     $q->where('sp.nama', 'LIKE', '%Sekolah%');
@@ -45,7 +45,7 @@ class AlumniController extends Controller
         $query = Alumni::query();
 
         $query->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
-            $q->join('satuan_pendidikan as sp', 'alumnis.satdik_id', '=', 'sp.RowID');
+            $q->join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID');
 
             if ($tingkatPendidikan === 'SUPM') {
                 $q->where('sp.nama', 'LIKE', '%Sekolah%');
@@ -59,7 +59,7 @@ class AlumniController extends Controller
         });
 
         if ($satdik_id) {
-            $query->where('satdik_id', $satdik_id);
+            $query->where('id_satdik', $satdik_id);
         }
 
         // Count other columns (tidak diubah)
@@ -71,60 +71,61 @@ class AlumniController extends Controller
             ->get();
 
         $company_country_counts = $query->clone()
-            ->select('company_country')
-            ->groupBy('company_country')
-            ->selectRaw('company_country, COUNT(*) as count')
+            ->select('negara')
+            ->groupBy('negara')
+            ->selectRaw('negara, COUNT(*) as count')
             ->orderByDesc('count')
             ->get();
 
         $study_program_count = $query->clone()
-            ->where('work_status', 'sudah')
-            ->select('study_program')
-            ->groupBy('study_program')
-            ->selectRaw('study_program, COUNT(*) as count')
+            ->where('status_pekerjaan', 'sudah')
+            ->select('program_studi')
+            ->groupBy('program_studi')
+            ->selectRaw('program_studi, COUNT(*) as count')
             ->orderByDesc('count')
             ->get();
 
         $work_status_counts = $query->clone()
-            ->select('work_status')
-            ->groupBy('work_status')
-            ->selectRaw('work_status, COUNT(*) as count')
+            ->select('status_pekerjaan')
+            ->groupBy('status_pekerjaan')
+            ->selectRaw('status_pekerjaan, COUNT(*) as count')
             ->orderByDesc('count')
             ->get();
 
         $income_range_counts = $query->clone()
-            ->select('income_range')
-            ->groupBy('income_range')
-            ->selectRaw('income_range, COUNT(*) as count')
+            ->select('penghasilan')
+            ->groupBy('penghasilan')
+            ->selectRaw('penghasilan, COUNT(*) as count')
             ->orderByDesc('count')
             ->get();
 
+
         $gender_counts = $query->clone()
-            ->select('gender')
-            ->groupBy('gender')
-            ->selectRaw('gender, COUNT(*) as count')
+            ->select('jenis_kelamin')
+            ->groupBy('jenis_kelamin')
+            ->selectRaw('jenis_kelamin, COUNT(*) as count')
             ->orderByDesc('count')
             ->get();
 
         $employment_by_year_counts = $query->clone()
-            ->where('work_status', 'sudah')
-            ->select('year')
-            ->groupBy('year')
-            ->selectRaw('year, COUNT(*) as count')
+            ->where('status_pekerjaan', 'sudah')
+            ->select('tahun_lulus')
+            ->groupBy('tahun_lulus')
+            ->selectRaw('tahun_lulus, COUNT(*) as count')
             ->orderByDesc('count')
             ->get();
 
         $alumni_per_year_counts = $query->clone()
-            ->select('year')
-            ->groupBy('year')
-            ->selectRaw('year, COUNT(*) as count')
+            ->select('tahun_lulus')
+            ->groupBy('tahun_lulus')
+            ->selectRaw('tahun_lulus, COUNT(*) as count')
             ->orderByDesc('count')
             ->get();
 
         $top_job_fields = $query->clone()
-            ->select('job_field')
-            ->groupBy('job_field')
-            ->selectRaw('job_field, COUNT(*) as count')
+            ->select('bidang_pekerjaan')
+            ->groupBy('bidang_pekerjaan')
+            ->selectRaw('bidang_pekerjaan, COUNT(*) as count')
             ->orderByDesc('count')
             ->get();
 
@@ -141,9 +142,9 @@ class AlumniController extends Controller
         ];
 
         // Query jumlah alumni untuk kampus Politeknik AUP (digabung)
-        $politeknikAupCount = Alumni::join('satuan_pendidikan as sp', 'alumnis.satdik_id', '=', 'sp.RowID')
+        $politeknikAupCount = Alumni::join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID')
             ->when($satdik_id, function ($q) use ($satdik_id) {
-                $q->where('alumnis.satdik_id', $satdik_id);
+                $q->where('alumnis.id_satdik', $satdik_id);
             })
             ->whereIn('sp.nama', $kampusAUP)
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
@@ -162,9 +163,9 @@ class AlumniController extends Controller
             ->first();
 
         // Query kampus selain Politeknik AUP
-        $otherSatdikCounts = Alumni::join('satuan_pendidikan as sp', 'alumnis.satdik_id', '=', 'sp.RowID')
+        $otherSatdikCounts = Alumni::join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID')
             ->when($satdik_id, function ($q) use ($satdik_id) {
-                $q->where('alumnis.satdik_id', $satdik_id);
+                $q->where('alumnis.id_satdik', $satdik_id);
             })
             ->whereNotIn('sp.nama', $kampusAUP)
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
