@@ -10,7 +10,7 @@ class TblKerjaSama extends Model
     use HasFactory;
 
     protected $table = "tbl_kerjasama";
-
+    protected $primaryKey = 'ID';
     protected $guarded = [];
 
     protected $casts = [
