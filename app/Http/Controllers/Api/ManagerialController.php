@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class ManagerialController extends Controller
 {
@@ -1293,6 +1294,9 @@ class ManagerialController extends Controller
             return response()->json(['message' => 'Data not found.'], 404);
         }
 
+        Log::info('Dirty:', $satuan->getDirty());
+
+
         // Validate the file if it exists
         if ($request->hasFile('document')) {
             $request->validate([
@@ -1343,7 +1347,9 @@ class ManagerialController extends Controller
             }
         }
 
-        $satuan->save();
+        $saved = $satuan->save();
+        Log::info('Save status: ' . ($saved ? 'true' : 'false'));
+        Log::info('After Update:', $satuan->toArray());
 
         return response()->json([
             'message' => 'Data updated successfully.',
