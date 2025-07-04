@@ -83,8 +83,8 @@ Route::get('/pbj/getPBJGroupedByAkun', [ManagerialController::class, 'getPBJGrou
 
 Route::get('/kerja-sama/getSummaryChartKS', [ManagerialController::class, 'getSummaryChartKS']);
 Route::get('/kerja-sama/getRincianDataKS', [ManagerialController::class, 'getRincianDataKS']);
-Route::patch('/kerja-sama/{rowId}/postDocumentKS', [ManagerialController::class, 'postDocumentKS']);
-Route::patch('/kerja-sama/{rowId}/postDocumentKSDataOnly', [ManagerialController::class, 'postDocumentKSOnlyData']);
+Route::put('/kerja-sama/{rowId}/postDocumentKS', [ManagerialController::class, 'postDocumentKS']);
+Route::put('/kerja-sama/{rowId}/postDocumentKSDataOnly', [ManagerialController::class, 'postDocumentKSOnlyData']);
 
 
 
@@ -94,7 +94,7 @@ Route::post('publikasi', [PublicationController::class, 'store']);            //
 Route::put('publikasi/{id}', [PublicationController::class, 'update']);       // Update by ID
 
 // Update counters
-Route::patch('publikasi/{id}/access_count', [PublicationController::class, 'updateAccessCount']);
-Route::patch('publikasi/{id}/tanggal_count', [PublicationController::class, 'updateTanggalCount']);
+Route::put('publikasi/{id}/access_count', [PublicationController::class, 'updateAccessCount']);
+Route::put('publikasi/{id}/tanggal_count', [PublicationController::class, 'updateTanggalCount']);
 
 Route::post('/satuan-pendidikan/{rowId}/profile', [SatuanPendidikanController::class, 'updateWebsite']);
