@@ -1288,22 +1288,23 @@ class ManagerialController extends Controller
 
     public function postDocumentKS(Request $request, $rowId)
     {
-        $satuan = TblKerjaSama::where('ID', $rowId)->first();
+        $request->validate([
+            'document' => 'nullable|mimes:pdf|max:20048',
+        ]);
+
+        $satuan = TblKerjaSama::find($rowId);
 
         if (!$satuan) {
             return response()->json(['message' => 'Data not found.'], 404);
         }
 
-        Log::info('Dirty:', $satuan->getDirty());
+        // Manually update all request fields
+        foreach ($request->except('document') as $key => $value) {
+            $satuan->{$key} = $value;
+        }
 
-
-        // Validate the file if it exists
+        // Handle file upload
         if ($request->hasFile('document')) {
-            $request->validate([
-                'document' => 'required|mimes:pdf|max:20048', // max 20MB
-            ]);
-
-            // Delete old file if exists
             if ($satuan->File_Dokumen) {
                 $oldPath = str_replace('/storage/', '', $satuan->File_Dokumen);
                 if (Storage::disk('public')->exists($oldPath)) {
@@ -1311,49 +1312,16 @@ class ManagerialController extends Controller
                 }
             }
 
-            // Store new file
             $filename = Str::uuid() . '.' . $request->file('document')->getClientOriginalExtension();
             $path = $request->file('document')->storeAs('ks', $filename, 'public');
-
-            // Save file path
             $satuan->File_Dokumen = '/storage/' . $path;
         }
 
-        // Update other optional fields if provided
-        $fields = [
-            'Judul_Kerja_Sama',
-            'Ruang_Lingkup',
-            'Substansi',
-            'Pemrakarsa',
-            'Jenis_Dokumen',
-            'Lingkup',
-            'Tingkatan',
-            'Pihak_KKP',
-            'Pihak_Mitra',
-            'Informasi_Penandatanganan',
-            'Mulai',
-            'Selesai',
-            'Pembiayaan',
-            'Keterangan',
-            'Created_By',
-            'When_Created',
-            'Updated_By',
-            'When_Updated',
-        ];
-
-        foreach ($fields as $field) {
-            if ($request->has($field)) {
-                $satuan->$field = $request->input($field);
-            }
-        }
-
-        $saved = $satuan->save();
-        Log::info('Save status: ' . ($saved ? 'true' : 'false'));
-        Log::info('After Update:', $satuan->toArray());
+        $satuan->save();
 
         return response()->json([
             'message' => 'Data updated successfully.',
-            'data' => $satuan
+            'data' => $satuan,
         ]);
     }
 }
