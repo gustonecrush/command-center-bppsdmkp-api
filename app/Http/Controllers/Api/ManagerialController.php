@@ -1353,7 +1353,7 @@ class ManagerialController extends Controller
             $row->{$key} = $value;
         }
 
-        $saved = $row->update();
+        $saved = $row->save();
 
 
         return response()->json(['saved' => $saved, 'data' => $row]);
