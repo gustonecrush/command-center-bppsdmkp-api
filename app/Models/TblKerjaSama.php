@@ -12,6 +12,8 @@ class TblKerjaSama extends Model
     protected $table = "tbl_kerjasama";
     public $timestamps = false;
 
+    protected $guarded = [];
+
     protected $fillable = [
         'Judul_Kerja_Sama',
         'Ruang_Lingkup',
