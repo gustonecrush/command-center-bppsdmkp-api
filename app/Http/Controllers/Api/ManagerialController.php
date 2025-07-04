@@ -1298,12 +1298,27 @@ class ManagerialController extends Controller
             return response()->json(['message' => 'Data not found.'], 404);
         }
 
-        // Manually update all request fields
         foreach ($request->except('document') as $key => $value) {
-            $satuan->{$key} = $value;
+            // Force override even if value is same
+            if (in_array($key, [
+                'Judul_Kerja_Sama',
+                'Jenis_Dokumen',
+                'Pihak_KKP',
+                'Pihak_Mitra',
+                'Informasi_Penandatanganan',
+                'Mulai',
+                'Selesai',
+                'Pemrakarsa',
+                'Lingkup',
+                'Ruang_Lingkup',
+                'Pembiayaan',
+                'Substansi',
+                'Keterangan',
+            ])) {
+                $satuan->{$key} = $value;
+            }
         }
 
-        // Handle file upload
         if ($request->hasFile('document')) {
             if ($satuan->File_Dokumen) {
                 $oldPath = str_replace('/storage/', '', $satuan->File_Dokumen);
