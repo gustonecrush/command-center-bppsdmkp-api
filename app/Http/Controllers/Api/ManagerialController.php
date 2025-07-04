@@ -1052,10 +1052,92 @@ class ManagerialController extends Controller
     //     return response()->json($result);
     // }
 
+    //     public function getGroupedPbjBySatker(Request $request)
+    //     {
+    //         $tahun = $request->input('tahun');
+    //         $tanggal = $request->input('tanggal');
+    //         $kdsatker = $request->query('kdsatker');
+
+
+    //         // Subquery: Aggregate tbl_outstanding_blokir by kdsatker
+    //         $outstandingSub = DB::table('tbl_outstanding_blokir')
+    //             ->select(
+    //                 'kdsatker',
+    //                 DB::raw('SUM(outstanding) as total_outstanding'),
+    //                 DB::raw('SUM(blokir) as total_blokir')
+    //             )
+    //             ->where('tanggal_omspan', $tanggal)
+    //             ->groupBy('kdsatker');
+
+    //         // Main query: Aggregate tbl_pbj and join with subquery on kdsatker
+    //         $query = DB::table('tbl_pbj as p')
+    //             ->leftJoinSub($outstandingSub, 'o', function ($join) {
+    //                 $join->on('p.kdsatker', '=', 'o.kdsatker');
+    //             })
+    //             ->select(
+    //                 'p.kdsatker',
+    //                 'p.nama_satker',
+    //                 DB::raw('SUM(p.nilai_kontrak) as nilai_kontrak'),
+    //                 DB::raw('SUM(p.nilai_realisasi) as nilai_realisasi'),
+    //                 DB::raw('SUM(p.nilai_sisa) as nilai_outstanding_pbj'),
+
+    //                 // Persentase PBJ Realisasi
+    //                 DB::raw('
+    //                 CASE 
+    //                     WHEN SUM(p.nilai_kontrak) > 0 THEN ROUND((SUM(p.nilai_realisasi) / SUM(p.nilai_kontrak)) * 100, 2)
+    //                     ELSE 0
+    //                 END as persentasi_realisasi_pbj
+    //             '),
+
+    //                 // Persentase PBJ Outstanding
+    //                 DB::raw('
+    //                 CASE 
+    //                     WHEN SUM(p.nilai_kontrak) > 0 THEN ROUND((SUM(p.nilai_sisa) / SUM(p.nilai_kontrak)) * 100, 2)
+    //                     ELSE 0
+    //                 END as persentasi_outstanding_pbj
+    //             '),
+
+    //                 // From tbl_outstanding_blokir
+    //                 DB::raw('IFNULL(SUM(o.total_outstanding), 0) as total_outstanding_blokir'),
+    //                 DB::raw('IFNULL(SUM(o.total_blokir), 0) as total_blokir')
+    //             );
+
+    //         // Apply filters
+    //         if ($tahun) {
+    //             $query->whereYear('p.tanggal_omspan', $tahun);
+    //         }
+
+    //         if ($tanggal) {
+    //             $query->whereDate('p.tanggal_omspan', $tanggal);
+    //         }
+
+    //         // Group by satker
+    //         $query->groupBy('p.kdsatker', 'p.nama_satker')->orderByRaw("
+    //     CASE
+    //         WHEN nama_satker LIKE '%Sekretariat%' THEN 1
+    //         WHEN nama_satker LIKE '%Pusat%' THEN 2
+    //           WHEN nama_satker LIKE '%Balai Besar%' THEN 3
+    //         WHEN nama_satker LIKE '%Politeknik%' THEN 4
+    //         WHEN nama_satker LIKE '%Akademi%' THEN 5
+    //         WHEN nama_satker LIKE '%Sekolah%' THEN 6
+    //         WHEN nama_satker LIKE '%Pelatihan%' THEN 7
+    //         WHEN nama_satker LIKE '%Penyuluhan%' THEN 8
+    //                 WHEN nama_satker LIKE '%Balai Riset%' THEN 9
+    //         WHEN nama_satker LIKE '%Loka%' THEN 10
+    //         ELSE 11
+    //     END ASC
+    // ");
+
+    //         $result = $query->get();
+
+    //         return response()->json($result);
+    //     }
+
     public function getGroupedPbjBySatker(Request $request)
     {
         $tahun = $request->input('tahun');
         $tanggal = $request->input('tanggal');
+        $kdsatker = $request->query('kdsatker');
 
         // Subquery: Aggregate tbl_outstanding_blokir by kdsatker
         $outstandingSub = DB::table('tbl_outstanding_blokir')
@@ -1079,7 +1161,6 @@ class ManagerialController extends Controller
                 DB::raw('SUM(p.nilai_realisasi) as nilai_realisasi'),
                 DB::raw('SUM(p.nilai_sisa) as nilai_outstanding_pbj'),
 
-                // Persentase PBJ Realisasi
                 DB::raw('
                 CASE 
                     WHEN SUM(p.nilai_kontrak) > 0 THEN ROUND((SUM(p.nilai_realisasi) / SUM(p.nilai_kontrak)) * 100, 2)
@@ -1087,7 +1168,6 @@ class ManagerialController extends Controller
                 END as persentasi_realisasi_pbj
             '),
 
-                // Persentase PBJ Outstanding
                 DB::raw('
                 CASE 
                     WHEN SUM(p.nilai_kontrak) > 0 THEN ROUND((SUM(p.nilai_sisa) / SUM(p.nilai_kontrak)) * 100, 2)
@@ -1095,7 +1175,6 @@ class ManagerialController extends Controller
                 END as persentasi_outstanding_pbj
             '),
 
-                // From tbl_outstanding_blokir
                 DB::raw('IFNULL(SUM(o.total_outstanding), 0) as total_outstanding_blokir'),
                 DB::raw('IFNULL(SUM(o.total_blokir), 0) as total_blokir')
             );
@@ -1109,27 +1188,32 @@ class ManagerialController extends Controller
             $query->whereDate('p.tanggal_omspan', $tanggal);
         }
 
-        // Group by satker
-        $query->groupBy('p.kdsatker', 'p.nama_satker')->orderByRaw("
-    CASE
-        WHEN nama_satker LIKE '%Sekretariat%' THEN 1
-        WHEN nama_satker LIKE '%Pusat%' THEN 2
-          WHEN nama_satker LIKE '%Balai Besar%' THEN 3
-        WHEN nama_satker LIKE '%Politeknik%' THEN 4
-        WHEN nama_satker LIKE '%Akademi%' THEN 5
-        WHEN nama_satker LIKE '%Sekolah%' THEN 6
-        WHEN nama_satker LIKE '%Pelatihan%' THEN 7
-        WHEN nama_satker LIKE '%Penyuluhan%' THEN 8
+        if ($kdsatker) {
+            $query->where('p.kdsatker', $kdsatker);
+        }
+
+        $query->groupBy('p.kdsatker', 'p.nama_satker')
+            ->orderByRaw("
+            CASE
+                WHEN nama_satker LIKE '%Sekretariat%' THEN 1
+                WHEN nama_satker LIKE '%Pusat%' THEN 2
+                WHEN nama_satker LIKE '%Balai Besar%' THEN 3
+                WHEN nama_satker LIKE '%Politeknik%' THEN 4
+                WHEN nama_satker LIKE '%Akademi%' THEN 5
+                WHEN nama_satker LIKE '%Sekolah%' THEN 6
+                WHEN nama_satker LIKE '%Pelatihan%' THEN 7
+                WHEN nama_satker LIKE '%Penyuluhan%' THEN 8
                 WHEN nama_satker LIKE '%Balai Riset%' THEN 9
-        WHEN nama_satker LIKE '%Loka%' THEN 10
-        ELSE 11
-    END ASC
-");
+                WHEN nama_satker LIKE '%Loka%' THEN 10
+                ELSE 11
+            END ASC
+        ");
 
         $result = $query->get();
 
         return response()->json($result);
     }
+
 
 
 
