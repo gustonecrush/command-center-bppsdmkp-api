@@ -1339,4 +1339,23 @@ class ManagerialController extends Controller
             'data' => $satuan,
         ]);
     }
+
+    public function postDocumentKSOnlyData(Request $request, $rowId)
+    {
+
+
+        $row = TblKerjaSama::find($rowId);
+
+        if (!$row) return response()->json(['message' => 'Not found'], 404);
+
+        foreach ($request->except('document') as $key => $value) {
+
+            $row->{$key} = $value;
+        }
+
+        $saved = $row->save();
+
+
+        return response()->json(['saved' => $saved, 'data' => $row]);
+    }
 }

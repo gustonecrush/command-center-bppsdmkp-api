@@ -84,6 +84,8 @@ Route::get('/pbj/getPBJGroupedByAkun', [ManagerialController::class, 'getPBJGrou
 Route::get('/kerja-sama/getSummaryChartKS', [ManagerialController::class, 'getSummaryChartKS']);
 Route::get('/kerja-sama/getRincianDataKS', [ManagerialController::class, 'getRincianDataKS']);
 Route::post('/kerja-sama/{rowId}/postDocumentKS', [ManagerialController::class, 'postDocumentKS']);
+Route::post('/kerja-sama/{rowId}/postDocumentKSDataOnly', [ManagerialController::class, 'postDocumentKSOnlyData']);
+
 
 
 Route::get('publikasi', [PublicationController::class, 'index']);             // Get all
