@@ -105,8 +105,16 @@ class PendidikController extends Controller
         $jabatan_counts = $query->clone()
             ->selectRaw('jabatan, COUNT(*) as count')
             ->groupBy('jabatan')
-            ->orderByDesc('count')
+            ->orderByRaw("FIELD(jabatan, 
+        'GURU BESAR', 
+        'LEKTOR KEPALA', 
+        'LEKTOR', 
+        'ASISTEN AHLI', 
+        'GURU MADYA', 
+        'GURU MUDA', 
+        'GURU PERTAMA')")
             ->get();
+
         $gender_counts = $query->clone()
             ->selectRaw('gender, COUNT(*) as count')
             ->groupBy('gender')
