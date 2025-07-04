@@ -1344,7 +1344,7 @@ class ManagerialController extends Controller
     {
 
 
-        $row = TblKerjaSama::get($rowId)->first();
+        $row = TblKerjaSama::find($rowId);
 
         if (!$row) return response()->json(['message' => 'Not found'], 404);
 
