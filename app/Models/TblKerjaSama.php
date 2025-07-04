@@ -14,6 +14,11 @@ class TblKerjaSama extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'Mulai' => 'integer',
+        'Selesai' => 'integer',
+    ];
+
     protected $fillable = [
         'Judul_Kerja_Sama',
         'Ruang_Lingkup',
