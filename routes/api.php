@@ -101,22 +101,10 @@ Route::post('publikasi/{id}/tanggal_count', [PublicationController::class, 'upda
 Route::post('/satuan-pendidikan/{rowId}/profile', [SatuanPendidikanController::class, 'updateWebsite']);
 
 // Penyuluhan
-Route::get('/penyuluh/group-by-provinsi-status', function (PenyuluhController $controller) {
-    return $controller->groupByProvinsiAnd('status');
-});
-
-Route::get('/penyuluh/group-by-provinsi-jabatan', function (PenyuluhController $controller) {
-    return $controller->groupByProvinsiAnd('jabatan');
-});
-
-Route::get('/penyuluh/group-by-provinsi-pendidikan', function (PenyuluhController $controller) {
-    return $controller->groupByProvinsiAnd('pendidikan');
-});
-
-Route::get('/penyuluh/group-by-provinsi-kelompok-usia', function (PenyuluhController $controller) {
-    return $controller->groupByProvinsiAnd('kelompok_usia');
-});
-
-Route::get('/penyuluh/group-by-provinsi-kelamin', function (PenyuluhController $controller) {
-    return $controller->groupByProvinsiAnd('kelamin');
+Route::prefix('penyuluh')->group(function () {
+    Route::get('/group-by-status',        [PenyuluhController::class, 'groupByStatus']);
+    Route::get('/group-by-jabatan',       [PenyuluhController::class, 'groupByJabatan']);
+    Route::get('/group-by-pendidikan',    [PenyuluhController::class, 'groupByPendidikan']);
+    Route::get('/group-by-kelompok-usia', [PenyuluhController::class, 'groupByKelompokUsia']);
+    Route::get('/group-by-kelamin',       [PenyuluhController::class, 'groupByKelamin']);
 });
