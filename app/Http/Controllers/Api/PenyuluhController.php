@@ -53,6 +53,17 @@ class PenyuluhController extends Controller
         return $this->groupByFixedTypes('kelamin', $kelaminTypes);
     }
 
+    public function countBySatminkal()
+    {
+        $data = Penyuluh::select('satminkal', DB::raw('count(*) as total'))
+            ->whereNotNull('satminkal')
+            ->groupBy('satminkal')
+            ->get();
+
+        return response()->json($data);
+    }
+
+
     private function groupByFixedTypes(string $column, array $fixedTypes)
     {
         $data = Penyuluh::select('provinsi', $column, DB::raw('count(*) as total'))
