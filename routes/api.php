@@ -108,4 +108,5 @@ Route::prefix('penyuluh')->group(function () {
     Route::get('/group-by-kelompok-usia', [PenyuluhController::class, 'groupByKelompokUsia']);
     Route::get('/group-by-kelamin',       [PenyuluhController::class, 'groupByKelamin']);
     Route::get('/count-by-satminkal', [PenyuluhController::class, 'countBySatminkal']);
+    Route::get('/grouped-by-satminkal', [PenyuluhController::class, 'getGroupedBySatminkalDetails']);
 });
