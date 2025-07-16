@@ -68,8 +68,41 @@ class PenyuluhController extends Controller
 
     public function groupByJabatan()
     {
-        return $this->getGroupedByProvinsi('jabatan');
+        $data = Penyuluh::select('provinsi', 'jabatan', DB::raw('count(*) as total'))
+            ->whereNotNull('provinsi')
+            ->groupBy('provinsi', 'jabatan')
+            ->orderBy('provinsi')
+            ->get();
+
+        // Define fixed jabatan types in the required order
+        $jabatanTypes = [
+            'PP PEMULA',
+            'APP TERAMPIL',
+            'APP MAHIR',
+            'APP PENYELIA',
+            'PP PERTAMA',
+            'PP MUDA',
+            'PP MADYA'
+        ];
+
+        $grouped = $data->groupBy('provinsi')->map(function ($items, $provinsi) use ($jabatanTypes) {
+            $jabatanCounts = collect($jabatanTypes)->map(function ($type) use ($items) {
+                $match = $items->firstWhere('jabatan', $type);
+                return [
+                    'jabatan' => $type,
+                    'total' => $match ? $match->total : 0
+                ];
+            });
+
+            return [
+                'provinsi' => $provinsi,
+                'jabatan' => $jabatanCounts
+            ];
+        })->values();
+
+        return response()->json($grouped);
     }
+
     public function groupByPendidikan()
     {
         return $this->getGroupedByProvinsi('pendidikan');
