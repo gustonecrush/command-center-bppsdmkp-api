@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\BackupController;
 use App\Http\Controllers\Api\ManagerialController;
 use App\Http\Controllers\Api\PendidikController;
 use App\Http\Controllers\Api\PentaruController;
+use App\Http\Controllers\Api\PenyuluhController;
 use App\Http\Controllers\Api\PesertaDidikController;
 use App\Http\Controllers\Api\PublicationController;
 use App\Http\Controllers\Api\SatuanPendidikanController;
@@ -98,3 +99,24 @@ Route::post('publikasi/{id}/access_count', [PublicationController::class, 'updat
 Route::post('publikasi/{id}/tanggal_count', [PublicationController::class, 'updateTanggalCount']);
 
 Route::post('/satuan-pendidikan/{rowId}/profile', [SatuanPendidikanController::class, 'updateWebsite']);
+
+// Penyuluhan
+Route::get('/penyuluh/group-by-provinsi-status', function (PenyuluhController $controller) {
+    return $controller->groupByProvinsiAnd('status');
+});
+
+Route::get('/penyuluh/group-by-provinsi-jabatan', function (PenyuluhController $controller) {
+    return $controller->groupByProvinsiAnd('jabatan');
+});
+
+Route::get('/penyuluh/group-by-provinsi-pendidikan', function (PenyuluhController $controller) {
+    return $controller->groupByProvinsiAnd('pendidikan');
+});
+
+Route::get('/penyuluh/group-by-provinsi-kelompok-usia', function (PenyuluhController $controller) {
+    return $controller->groupByProvinsiAnd('kelompok_usia');
+});
+
+Route::get('/penyuluh/group-by-provinsi-kelamin', function (PenyuluhController $controller) {
+    return $controller->groupByProvinsiAnd('kelamin');
+});
