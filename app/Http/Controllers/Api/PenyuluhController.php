@@ -39,8 +39,33 @@ class PenyuluhController extends Controller
 
     public function groupByStatus()
     {
-        return $this->getGroupedByProvinsi('status');
+        $data = Penyuluh::select('provinsi', 'status', DB::raw('count(*) as total'))
+            ->whereNotNull('provinsi')
+            ->groupBy('provinsi', 'status')
+            ->orderBy('provinsi')
+            ->get();
+
+        // Define fixed status types
+        $statusTypes = ['PNS', 'PPPK', 'PPB'];
+
+        $grouped = $data->groupBy('provinsi')->map(function ($items, $provinsi) use ($statusTypes) {
+            $statusCounts = collect($statusTypes)->map(function ($type) use ($items) {
+                $match = $items->firstWhere('status', $type);
+                return [
+                    'status' => $type,
+                    'total' => $match ? $match->total : 0
+                ];
+            });
+
+            return [
+                'provinsi' => $provinsi,
+                'status' => $statusCounts
+            ];
+        })->values();
+
+        return response()->json($grouped);
     }
+
     public function groupByJabatan()
     {
         return $this->getGroupedByProvinsi('jabatan');
