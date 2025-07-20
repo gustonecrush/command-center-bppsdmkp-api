@@ -27,6 +27,7 @@ class Penyuluh extends Model
         'asn',
         'kelompok_usia',
         'kode_provinsi2',
-        'kode_kab_kota2'
+        'kode_kab_kota2',
+        'triwulan'
     ];
 }

@@ -2,6 +2,10 @@
 
 use App\Http\Controllers\Api\AlumniController;
 use App\Http\Controllers\Api\BackupController;
+use App\Http\Controllers\Api\GapokkanDidampingiController;
+use App\Http\Controllers\Api\KelompokDibentukController;
+use App\Http\Controllers\Api\KelompokDisuluhController;
+use App\Http\Controllers\Api\KelompokDitingkatkanController;
 use App\Http\Controllers\Api\ManagerialController;
 use App\Http\Controllers\Api\PendidikController;
 use App\Http\Controllers\Api\PentaruController;
@@ -12,6 +16,7 @@ use App\Http\Controllers\Api\SatuanPendidikanController;
 use App\Http\Controllers\Api\TenagaKependidikanController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -110,3 +115,28 @@ Route::prefix('penyuluh')->group(function () {
     Route::get('/count-by-satminkal', [PenyuluhController::class, 'countBySatminkal']);
     Route::get('/grouped-by-satminkal', [PenyuluhController::class, 'getGroupedBySatminkalDetails']);
 });
+
+Route::prefix('kelompok-disuluh')->group(function () {
+    Route::get('/jumlah-per-satminkal', [KelompokDisuluhController::class, 'jumlahPerSatminkal']);
+    Route::get('/jumlah-per-provinsi', [KelompokDisuluhController::class, 'jumlahPerProvinsi']);
+    Route::get('/bidang-usaha-per-provinsi', [KelompokDisuluhController::class, 'bidangUsahaPerProvinsi']);
+    Route::get('/kelas-per-provinsi', [KelompokDisuluhController::class, 'kelasKelompokPerProvinsi']);
+    Route::get('/bidang-usaha-per-satminkal', [KelompokDisuluhController::class, 'bidangUsahaPerSatminkal']);
+});
+
+
+Route::prefix('kelompok-ditingkatkan')->group(function () {
+    Route::get('/jumlah-per-satminkal', [KelompokDitingkatkanController::class, 'jumlahPerSatminkal']);
+    Route::get('/jumlah-per-provinsi', [KelompokDitingkatkanController::class, 'jumlahPerProvinsi']);
+    Route::get('/bidang-usaha-per-provinsi', [KelompokDitingkatkanController::class, 'bidangUsahaPerProvinsi']);
+    Route::get('/kelas-per-provinsi', [KelompokDitingkatkanController::class, 'kelasPerProvinsi']);
+    Route::get('/bidang-usaha-per-satminkal', [KelompokDitingkatkanController::class, 'bidangUsahaPerSatminkal']);
+});
+
+Route::prefix('kelompok-dibentuk')->group(function () {
+    Route::get('/bidang-usaha-per-satminkal', [KelompokDibentukController::class, 'bidangUsahaPerSatminkal']);
+    Route::get('/bidang-usaha-per-provinsi', [KelompokDibentukController::class, 'bidangUsahaPerProvinsi']);
+});
+
+Route::get('/gapokkan/per-satminkal', [GapokkanDidampingiController::class, 'perSatminkal']);
+Route::get('/gapokkan/per-provinsi', [GapokkanDidampingiController::class, 'perProvinsi']);
