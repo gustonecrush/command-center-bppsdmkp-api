@@ -306,6 +306,7 @@ class AlumniController extends Controller
             })
             ->leftJoin('mtr_kabupatens as kab', 'alumnis.kota_kabupaten', '=', 'kab.kabupaten')
             ->select([
+                'alumnis.id_alumni',
                 'alumnis.name',
                 'alumnis.tahun_lulus',
                 'alumnis.program_studi',
