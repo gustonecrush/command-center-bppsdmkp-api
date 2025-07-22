@@ -294,9 +294,9 @@ class AlumniController extends Controller
             ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
                 $q->join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID');
 
-                if ($tingkatPendidikan === 'SUPM') {
+                if ($tingkatPendidikan === 'Menengah') {
                     $q->where('sp.nama', 'LIKE', '%Sekolah%');
-                } elseif ($tingkatPendidikan === 'Politeknik') {
+                } elseif ($tingkatPendidikan === 'Tinggi') {
                     $q->where(function ($q2) {
                         $q2->where('sp.nama', 'LIKE', '%Politeknik%')
                             ->orWhere('sp.nama', 'LIKE', '%Akademi%')
@@ -314,6 +314,17 @@ class AlumniController extends Controller
                 'kab.longitude'
             ])
             ->get();
+
+        return response()->json($alumni);
+    }
+
+    public function show($id)
+    {
+        $alumni = Alumni::where('id_alumni', $id)->first();
+
+        if (!$alumni) {
+            return response()->json(['message' => 'Alumni not found'], 404);
+        }
 
         return response()->json($alumni);
     }

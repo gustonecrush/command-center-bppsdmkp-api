@@ -46,6 +46,8 @@ Route::get('/peserta-didiks/getStudentWithLocation', [PesertaDidikController::cl
 Route::get('/alumnis', [AlumniController::class, 'index']);
 Route::get('/alumnis/summary', [AlumniController::class, 'summary']);
 Route::get('/alumnis/location', [AlumniController::class, 'location']);
+Route::get('/alumnis/{id}', [AlumniController::class, 'show']);
+
 
 Route::get('/peserta-didiks/summary', [PesertaDidikController::class, 'summary']);
 
