@@ -318,23 +318,22 @@ class AlumniController extends Controller
         return response()->json($alumni);
     }
 
-  public function show($id)
-{
-    $alumni = Alumni::query()
-        ->leftJoin('mtr_kabupatens as kab', 'alumnis.kota_kabupaten', '=', 'kab.kabupaten')
-        ->where('alumnis.id_alumni', $id)
-        ->select([
-            'alumnis.*',
-            'kab.latitude',
-            'kab.longitude'
-        ])
-        ->first();
+    public function show($id)
+    {
+        $alumni = Alumni::query()
+            ->leftJoin('mtr_kabupatens as kab', 'alumnis.kota_kabupaten', '=', 'kab.kabupaten')
+            ->where('alumnis.id_alumni', $id)
+            ->select([
+                'alumnis.*',
+                'kab.latitude',
+                'kab.longitude'
+            ])
+            ->first();
 
-    if (!$alumni) {
-        return response()->json(['message' => 'Alumni not found'], 404);
+        if (!$alumni) {
+            return response()->json(['message' => 'Alumni not found'], 404);
+        }
+
+        return response()->json($alumni);
     }
-
-    return response()->json($alumni);
-}
-
 }
