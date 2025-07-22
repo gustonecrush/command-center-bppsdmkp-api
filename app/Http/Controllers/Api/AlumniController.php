@@ -281,4 +281,39 @@ class AlumniController extends Controller
 
         return response()->json($data);
     }
+
+    public function location(Request $request)
+    {
+        $tingkatPendidikan = $request->query('tingkatPendidikan');
+        $tahunLulus = $request->query('selectedYear');
+
+        $alumni = Alumni::query()
+            ->when($tahunLulus, function ($query) use ($tahunLulus) {
+                return $query->where('tahun_lulus', $tahunLulus);
+            })
+            ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+                $q->join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID');
+
+                if ($tingkatPendidikan === 'SUPM') {
+                    $q->where('sp.nama', 'LIKE', '%Sekolah%');
+                } elseif ($tingkatPendidikan === 'Politeknik') {
+                    $q->where(function ($q2) {
+                        $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+                            ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+                            ->orWhere('sp.nama', 'LIKE', '%Pasca%');
+                    });
+                }
+            })
+            ->leftJoin('mtr_kabupatens as kab', 'alumnis.kota_kabupaten', '=', 'kab.kabupaten')
+            ->select([
+                'alumnis.name',
+                'alumnis.tahun_lulus',
+                'alumnis.program_studi',
+                'kab.latitude',
+                'kab.longitude'
+            ])
+            ->get();
+
+        return response()->json($alumni);
+    }
 }
