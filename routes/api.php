@@ -55,7 +55,6 @@ Route::get('/peserta-didiks/{id}', action: [PesertaDidikController::class, 'show
 
 Route::get('/', []);
 
-Route::get('/pentaru', [PentaruController::class, 'index']);
 Route::get('/pentaru/pendaftar/{id}', [PentaruController::class, 'showByRowID']);
 
 Route::get('/satuan-pendidikan', [SatuanPendidikanController::class, 'index']);
@@ -146,3 +145,8 @@ Route::prefix('kelompok-dibentuk')->group(function () {
 
 Route::get('/gapokkan/per-satminkal', [GapokkanDidampingiController::class, 'perSatminkal']);
 Route::get('/gapokkan/per-provinsi', [GapokkanDidampingiController::class, 'perProvinsi']);
+
+
+Route::get('/pentaru', [PentaruController::class, 'index']);
+Route::get('/pentaru/{no_pendaftaran}', [PentaruController::class, 'show']);
+Route::get('/pentaru/location', [PentaruController::class, 'location']);

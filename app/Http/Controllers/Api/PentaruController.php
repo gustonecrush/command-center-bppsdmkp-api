@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Pendaftar;
 use App\Models\Pendidik;
+use App\Models\Pentaru;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -12,20 +13,53 @@ class PentaruController extends Controller
 {
     public function index()
     {
-        $pentaru = Pendaftar::select('Nama', 'RowID', 'Register_Lat', 'Register_Lon')->get();
+        return response()->json(Pentaru::all());
+    }
+
+    public function show($no_pendaftaran)
+    {
+        $pentaru = Pentaru::where('no_pendaftaran', $no_pendaftaran)->first();
+
+        if (!$pentaru) {
+            return response()->json(['message' => 'Data not found'], 404);
+        }
+
         return response()->json($pentaru);
     }
 
-    private function getPendaftarByRowID($id)
+    public function location(Request $request)
     {
-        return Pendaftar::where('RowID', $id)->get();
-    }
+        $tingkatPendidikan = $request->query('tingkatPendidikan');
+        $tahun = $request->query('selectedYear');
 
-    public function showByRowID($id)
-    {
-        $data = $this->getPendaftarByRowID($id);
+        $pentaru = DB::table('pentaru as p')
+            ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+                if ($tingkatPendidikan === 'Menengah') {
+                    $q->where('p.nama_sekolah', 'like', '%SMA%')
+                        ->orWhere('p.nama_sekolah', 'like', '%SMK%')
+                        ->orWhere('p.nama_sekolah', 'like', '%Sekolah%');
+                } elseif ($tingkatPendidikan === 'Tinggi') {
+                    $q->where(function ($q2) {
+                        $q2->where('p.nama_sekolah', 'like', '%Politeknik%')
+                            ->orWhere('p.nama_sekolah', 'like', '%Akademi%')
+                            ->orWhere('p.nama_sekolah', 'like', '%Pasca%');
+                    });
+                }
+            })
+            ->when($tahun, function ($q) use ($tahun) {
+                $q->whereYear('p.tanggal_daftar', $tahun);
+            })
+            ->leftJoin('mtr_kabupatens as kab', 'p.kab_kota', '=', 'kab.kabupaten')
+            ->select([
+                'p.no_pendaftaran',
+                'p.nama_lengkap',
+                'p.no_nik',
+                'kab.latitude as lat',
+                'kab.longitude as long'
+            ])
+            ->get();
 
-        return $data ? response()->json($data) : response()->json(['message' => 'Data not found'], 404);
+        return response()->json($pentaru);
     }
 
 
