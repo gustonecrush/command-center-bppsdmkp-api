@@ -167,30 +167,10 @@ class PesertaDidikController extends Controller
 
             $satdikNama = null;
             $query = PesertaDidik::query();
+            $query->where('status', 'Active');
             if ($satdik_id) {
                 $query->where('peserta_didiks.id_satdik', $satdik_id);
             }
-
-
-
-            // $query = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama');
-
-            // if ($satdikNama) {
-            //     $query->where('sp.nama', $satdikNama);
-            // }
-
-            // if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
-            //     if ($tingkatPendidikan === 'SUPM') {
-            //         $query->where('sp.nama', 'LIKE', '%Sekolah%');
-            //     } elseif ($tingkatPendidikan === 'Politeknik') {
-            //         $query->where(function ($q) {
-            //             $q->where('sp.nama', 'LIKE', '%Politeknik%')
-            //                 ->orWhere('sp.nama', 'LIKE', '%Akademi%')
-            //                 ->orWhere('sp.nama', 'LIKE', '%Pasca%')
-            //                 ->orWhere('sp.nama', 'LIKE', '%Kampus%');
-            //         });
-            //     }
-            // }
 
             if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
                 $query->join('satuan_pendidikan as sp', 'peserta_didiks.id_satdik', '=', 'sp.RowID');
@@ -263,33 +243,7 @@ class PesertaDidikController extends Controller
                 ->orderByDesc('count')
                 ->get();
 
-            // ----------- REBUILD nama_satdik_count with custom mapping -------------
-            // $aupKampus = [
-            //     'Kampus Tegal',
-            //     'Kampus Lampung',
-            //     'Kampus Aceh',
-            //     'Kampus Pariaman',
-            //     'Kampus Maluku',
-            // ];
 
-            // $nama_satdik_query = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama');
-
-            // if ($satdikNama) {
-            //     $nama_satdik_query->where('sp.nama', $satdikNama);
-            // }
-
-            // if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
-            //     if ($tingkatPendidikan === 'SUPM') {
-            //         $nama_satdik_query->where('sp.nama', 'LIKE', '%Sekolah%');
-            //     } elseif ($tingkatPendidikan === 'Politeknik') {
-            //         $nama_satdik_query->where(function ($q) use ($aupKampus) {
-            //             $q->where('sp.nama', 'LIKE', '%Politeknik%')
-            //                 ->orWhere('sp.nama', 'LIKE', '%Akademi%')
-            //                 ->orWhere('sp.nama', 'LIKE', '%Pasca%')
-            //                 ->orWhereIn('sp.nama', $aupKampus);
-            //         });
-            //     }
-            // }
 
             $kampusAUP = [
                 'Politeknik AUP',
@@ -302,6 +256,7 @@ class PesertaDidikController extends Controller
             ];
 
             $politeknikAupCount = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.id_satdik', '=', 'sp.RowID')
+                ->where('peserta_didiks.status', 'Active')
                 ->when($satdik_id, function ($q) use ($satdik_id) {
                     $q->where('peserta_didiks.id_satdik', $satdik_id);
                 })
@@ -323,6 +278,7 @@ class PesertaDidikController extends Controller
 
             // Query kampus selain Politeknik AUP
             $otherSatdikCounts = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.id_satdik', '=', 'sp.RowID')
+                ->where('peserta_didiks.status', 'Active')
                 ->when($satdik_id, function ($q) use ($satdik_id) {
                     $q->where('peserta_didiks.id_satdik', $satdik_id);
                 })
