@@ -27,8 +27,7 @@ class PesertaDidikController extends Controller
 
         $query = DB::table('peserta_didiks as pd')
             ->select('pd.nama_lengkap', 'pd.id_peserta_didik', 'mk.latitude', 'mk.longitude')
-            ->leftJoin('mtr_kabupatens as mk', DB::raw("CAST(pd.id_kabupaten AS CHAR) COLLATE utf8mb4_general_ci"), '=', 'mk.id')
-            ->where('pd.status', 'Active'); // ✅ Filter only active students
+            ->leftJoin('mtr_kabupatens as mk', DB::raw("CAST(pd.id_kabupaten AS CHAR) COLLATE utf8mb4_general_ci"), '=', 'mk.id');
 
         // ⬇️ Apply filter based on tingkatPendidikan if provided
         if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
@@ -49,7 +48,6 @@ class PesertaDidikController extends Controller
 
         return response()->json($data);
     }
-
 
 
     public function summary(Request $request)
