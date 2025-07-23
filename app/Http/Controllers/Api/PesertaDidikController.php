@@ -27,7 +27,8 @@ class PesertaDidikController extends Controller
 
         $query = DB::table('peserta_didiks as pd')
             ->select('pd.nama_lengkap', 'pd.id_peserta_didik', 'mk.latitude', 'mk.longitude')
-            ->leftJoin('mtr_kabupatens as mk', DB::raw("CAST(pd.id_kabupaten AS CHAR) COLLATE utf8mb4_general_ci"), '=', 'mk.id');
+            ->leftJoin('mtr_kabupatens as mk', DB::raw("CAST(pd.id_kabupaten AS CHAR) COLLATE utf8mb4_general_ci"), '=', 'mk.id')
+            ->where('pd.status', 'Active'); // ✅ Filter only active students
 
         // ⬇️ Apply filter based on tingkatPendidikan if provided
         if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
@@ -50,114 +51,6 @@ class PesertaDidikController extends Controller
     }
 
 
-    // public function summary(Request $request)
-    // {
-    //     // Get the satdik_id from the query parameters
-    //     $satdik_id = $request->query('satdik_id');
-
-    //     // Base query for the Alumni model
-    //     $tingkatPendidikan = $request->query('tingkatPendidikan');
-
-    //     $query = PesertaDidik::query();
-
-    //     $query->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
-    //         $q->join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama');
-
-    //         if ($tingkatPendidikan === 'SUPM') {
-    //             $q->where('sp.nama', 'LIKE', '%Sekolah%');
-    //         } elseif ($tingkatPendidikan === 'Politeknik') {
-    //             $q->where(function ($q2) {
-    //                 $q2->where('sp.nama', 'LIKE', '%Politeknik%')
-    //                     ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
-    //             });
-    //         }
-    //     });
-
-    //     // Apply the satdik_id filter if provided
-    //     if ($satdik_id) {
-    //         $query->where('satdik_id', $satdik_id);
-    //     }
-
-    //     $parent_job_count = $query->clone()
-    //         ->select('parent_job')
-    //         ->groupBy('parent_job')
-    //         ->selectRaw('parent_job, COUNT(*) as count')
-    //         ->orderByDesc('count')
-    //         ->get();
-
-    //     $origin_count = $query->clone()
-    //         ->select('origin')
-    //         ->groupBy('origin')
-    //         ->selectRaw('origin, COUNT(*) as count')
-    //         ->orderByDesc('count')
-    //         ->get();
-
-    //     $prodis_count = $query->clone()
-    //         ->select('prodis')
-    //         ->groupBy('prodis')
-    //         ->selectRaw('prodis, COUNT(*) as count')
-    //         ->orderByDesc('count')
-    //         ->get();
-
-    //     $province_counts = $query->clone()
-    //         ->select('province_name')
-    //         ->groupBy('province_name')
-    //         ->selectRaw('province_name, COUNT(*) as count')
-    //         ->orderByDesc('count')
-    //         ->get();
-
-
-    //     $religion_counts = $query->clone()
-    //         ->select('religion')
-    //         ->groupBy('religion')
-    //         ->selectRaw('religion, COUNT(*) as count')
-    //         ->orderByDesc('count')
-    //         ->get();
-
-    //     $gender_counts = $query->clone()
-    //         ->select('gender')
-    //         ->groupBy('gender')
-    //         ->selectRaw('gender, COUNT(*) as count')
-    //         ->orderByDesc('count')
-    //         ->get();
-
-    //     $nama_satdik_count = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.satdik_name', '=', 'sp.nama')->when($satdik_id, function ($q) use ($satdik_id) {
-    //         $satdikNama = DB::table('satuan_pendidikan')->where('RowID', $satdik_id)->value('nama');
-
-    //         // Only apply filter if nama is found
-    //         if ($satdikNama) {
-    //             $q->where('sp.nama', $satdikNama);
-    //         }
-    //     })
-    //         ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
-    //             if ($tingkatPendidikan === 'SUPM') {
-    //                 $q->where('sp.nama', 'LIKE', '%Sekolah%');
-    //             } elseif ($tingkatPendidikan === 'Politeknik') {
-    //                 $q->where(function ($q2) {
-    //                     $q2->where('sp.nama', 'LIKE', '%Politeknik%')
-    //                         ->orWhere('sp.nama', 'LIKE', '%Akademi%')->orWhere('sp.nama', 'LIKE', '%Pasca%');
-    //                 });
-    //             }
-    //         })
-    //         ->selectRaw('sp.nama as nama_satdik, COUNT(*) as count')
-    //         ->groupBy('sp.nama')
-    //         ->orderByDesc('count')
-    //         ->get();
-
-    //     // Prepare the data with totals
-    //     $data = [
-    //         'parent_job_count' => $parent_job_count,
-    //         'origin_count' => $origin_count,
-    //         'prodis_count' => $prodis_count,
-    //         'province_counts' => $province_counts,
-    //         'religion_counts' => $religion_counts,
-    //         'gender_counts' => $gender_counts,
-    //         'nama_satdik_count' => $nama_satdik_count,
-    //     ];
-
-    //     // Return a JSON response
-    //     return response()->json($data);
-    // }
 
     public function summary(Request $request)
     {
