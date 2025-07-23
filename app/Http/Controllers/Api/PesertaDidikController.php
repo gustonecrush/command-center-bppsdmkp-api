@@ -297,4 +297,22 @@ class PesertaDidikController extends Controller
 
         return response()->json($result);
     }
+
+    public function show($id)
+    {
+        try {
+            $peserta = PesertaDidik::where('id_peserta_didik', $id)
+                ->where('status', 'Active')
+                ->first();
+
+            if (!$peserta) {
+                return response()->json(['message' => 'Peserta Didik not found'], 404);
+            }
+
+            return response()->json($peserta);
+        } catch (\Exception $e) {
+            Log::error("Error fetching peserta_didik: " . $e->getMessage());
+            return response()->json(['error' => 'Something went wrong'], 500);
+        }
+    }
 }
