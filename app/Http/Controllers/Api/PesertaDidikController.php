@@ -301,8 +301,15 @@ class PesertaDidikController extends Controller
     public function show($id)
     {
         try {
-            $peserta = PesertaDidik::where('id_peserta_didik', $id)
-                ->where('status', 'Active')
+            $peserta = DB::table('peserta_didiks as pd')
+                ->select(
+                    'pd.*',
+                    'mk.latitude',
+                    'mk.longitude'
+                )
+                ->leftJoin('mtr_kabupatens as mk', DB::raw("CAST(pd.id_kabupaten AS CHAR) COLLATE utf8mb4_general_ci"), '=', 'mk.id')
+                ->where('pd.id_peserta_didik', $id)
+                ->where('pd.status', 'Active')
                 ->first();
 
             if (!$peserta) {
