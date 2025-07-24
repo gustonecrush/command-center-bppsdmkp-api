@@ -1442,4 +1442,142 @@ class ManagerialController extends Controller
 
         return response()->json(['saved' => $saved, 'data' => $row]);
     }
+
+    private function initEntry(): array
+    {
+        return [
+            'pagu' => 0,
+            'realisasi' => 0,
+            'realisasi_sampai_tanggal' => 0,
+            'persen_realisasi' => 0,
+            'outstanding' => 0,
+            'blokir' => 0,
+        ];
+    }
+
+    private function categorizeSatker(string $nama): string
+    {
+        $nama = strtolower($nama);
+
+        if (str_contains($nama, 'dipa gambir') || str_contains($nama, 'sekretariat')) {
+            return 'Kantor Pusat';
+        }
+
+        if (str_contains($nama, 'bbrp2bkp') || str_contains($nama, 'bbrsekp')) {
+            return 'Kantor Daerah';
+        }
+
+        if ((str_contains($nama, 'loka') || str_contains($nama, 'riset')) && !str_contains($nama, 'penyuluhan')) {
+            return 'UPT Sekretariat';
+        }
+
+        if (str_contains($nama, 'penyuluhan') && !str_contains($nama, 'pelatihan')) {
+            return 'UPT Penyuluhan';
+        }
+
+        if (str_contains($nama, 'politeknik') || str_contains($nama, 'akademi') || str_contains($nama, 'sekolah')) {
+            return 'UPT Pendidikan';
+        }
+
+        if (str_contains($nama, 'pelatihan')) {
+            return 'UPT Pelatihan';
+        }
+
+        return 'UPT Sekretariat'; // default fallback
+    }
+
+    public function getRincianDipaPerPusat(Request $request)
+    {
+        $tahun = $request->input('tahun', now()->year);
+        $tanggalInput = $request->input('tanggal');
+
+        $tanggal = empty($tanggalInput)
+            ? DB::table('tbl_dipa_belanja')->max('tanggal_omspan')
+            : \Carbon\Carbon::parse($tanggalInput)->format('Y-m-d');
+
+        $type = $request->input('type');
+
+        // Subquery for DIPA
+        $subqueryPagu = DB::table('tbl_dipa_belanja')
+            ->select('kdsatker', DB::raw('SUM(amount) as pagu'))
+            ->where('tanggal_omspan', $tanggal)
+            ->groupBy('kdsatker');
+
+        // Subquery for Outstanding + Blokir
+        $subqueryOutstanding = DB::table('tbl_outstanding_blokir')
+            ->select(
+                'kdsatker',
+                DB::raw('SUM(outstanding) as total_outstanding'),
+                DB::raw('SUM(blokir) as total_blokir')
+            )
+            ->where('tanggal_omspan', $tanggal)
+            ->groupBy('kdsatker');
+
+        // Main query
+        $query = DB::table('tbl_realisasi_belanja as realisasi')
+            ->leftJoinSub($subqueryPagu, 'dipa', 'realisasi.kdsatker', '=', 'dipa.kdsatker')
+            ->leftJoinSub($subqueryOutstanding, 'outstanding', 'realisasi.kdsatker', '=', 'outstanding.kdsatker')
+            ->select(
+                'realisasi.kdsatker',
+                'realisasi.nama_satker',
+                DB::raw('COALESCE(dipa.pagu, 0) as pagu'),
+                DB::raw('SUM(realisasi.amount) as realisasi'),
+                DB::raw("SUM(CASE WHEN realisasi.tanggal_omspan ='{$tanggal}' THEN realisasi.amount ELSE 0 END) as realisasi_sampai_tanggal"),
+                DB::raw("COALESCE(outstanding.total_outstanding, 0) as outstanding"),
+                DB::raw("COALESCE(outstanding.total_blokir, 0) as blokir")
+            )
+            ->whereYear('realisasi.tanggal_omspan', $tahun)
+            ->where('realisasi.tanggal_omspan', $tanggal);
+
+        // Optional type filter
+        if ($type === 'Pendidikan') {
+            $query->where(function ($q) {
+                $q->where('realisasi.nama_satker', 'like', '%Pendidikan%')
+                    ->orWhere('realisasi.nama_satker', 'like', '%Politeknik%')
+                    ->orWhere('realisasi.nama_satker', 'like', '%Akademi%')
+                    ->orWhere('realisasi.nama_satker', 'like', '%Sekolah%');
+            });
+        } elseif ($type === 'Pelatihan') {
+            $query->where('realisasi.nama_satker', 'like', '%Pelatihan%');
+        }
+
+        $query->groupBy(
+            'realisasi.kdsatker',
+            'realisasi.nama_satker',
+            'dipa.pagu',
+            'outstanding.total_outstanding',
+            'outstanding.total_blokir'
+        );
+
+        $rows = $query->get();
+
+        // === GROUP & AGGREGATE BY FUNCTIONAL CATEGORY ===
+        $grouped = [
+            'Kantor Pusat'     => $this->initEntry(),
+            'Kantor Daerah'    => $this->initEntry(),
+            'UPT Sekretariat'  => $this->initEntry(),
+            'UPT Penyuluhan'   => $this->initEntry(),
+            'UPT Pendidikan'   => $this->initEntry(),
+            'UPT Pelatihan'    => $this->initEntry(),
+        ];
+
+        foreach ($rows as $row) {
+            $kategori = $this->categorizeSatker($row->nama_satker);
+
+            $grouped[$kategori]['pagu']                     += (float) $row->pagu;
+            $grouped[$kategori]['realisasi']                += (float) $row->realisasi;
+            $grouped[$kategori]['realisasi_sampai_tanggal'] += (float) $row->realisasi_sampai_tanggal;
+            $grouped[$kategori]['outstanding']              += (float) $row->outstanding;
+            $grouped[$kategori]['blokir']                   += (float) $row->blokir;
+        }
+
+        // Calculate percentage
+        foreach ($grouped as &$entry) {
+            $entry['persen_realisasi'] = $entry['pagu'] > 0
+                ? round(($entry['realisasi_sampai_tanggal'] / $entry['pagu']) * 100, 2)
+                : 0;
+        }
+
+        return response()->json($grouped, 200, [], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    }
 }

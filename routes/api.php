@@ -72,6 +72,8 @@ Route::get('/pendapatan/realisasi-akun', [ManagerialController::class, 'getReali
 Route::get('/summary', [ManagerialController::class, 'summary']);
 
 Route::get('/anggaran/rincian-realisasi', [ManagerialController::class, 'getRincianRealisasiAnggaran']);
+Route::get('/anggaran/rincian-pusat', [ManagerialController::class, 'getRincianDipaPerPusat']);
+
 
 Route::get('/anggaran/realisasi-sisa', [ManagerialController::class, 'getRealisasiDanSisa']);
 Route::get('/anggaran/realisasi-grouped', [ManagerialController::class, 'getRealisasiGrouped']);
