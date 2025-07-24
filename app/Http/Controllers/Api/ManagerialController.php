@@ -1533,10 +1533,12 @@ class ManagerialController extends Controller
         $grouped = [
             'Kantor Pusat' => [],
             'Kantor Daerah' => [],
-            'UPT Sekretariat' => $this->initEntry(),
-            'UPT Penyuluhan' => $this->initEntry(),
-            'UPT Pendidikan' => $this->initEntry(),
-            'UPT Pelatihan' => $this->initEntry(),
+            'UPT' => [
+                'UPT Sekretariat' => $this->initEntry(),
+                'UPT Penyuluhan' => $this->initEntry(),
+                'UPT Pendidikan' => $this->initEntry(),
+                'UPT Pelatihan' => $this->initEntry(),
+            ],
         ];
 
         foreach ($rows as $row) {
@@ -1545,12 +1547,12 @@ class ManagerialController extends Controller
                 'pagu' => (float) $row->pagu,
                 'realisasi' => (float) $row->realisasi,
                 'realisasi_sampai_tanggal' => (float) $row->realisasi_sampai_tanggal,
-                'persen_realisasi' => 0, // calculated later
+                'persen_realisasi' => 0,
                 'outstanding' => (float) $row->outstanding,
                 'blokir' => (float) $row->blokir,
             ];
 
-            // KANTOR PUSAT breakdown based on actual satker name contents
+            // KANTOR PUSAT
             if (str_contains($nama, 'sekretariat')) {
                 $grouped['Kantor Pusat']['DIPA GAMBIR'] = $entry;
             } elseif (str_contains($nama, 'penyuluhan') && str_contains($nama, 'pusat')) {
@@ -1558,43 +1560,37 @@ class ManagerialController extends Controller
             } elseif (str_contains($nama, 'standarisasi')) {
                 $grouped['Kantor Pusat']['DIPA SLIPI'] = $entry;
 
-
-                // KANTOR DAERAH breakdown
+                // KANTOR DAERAH
             } elseif (str_contains($nama, 'balai besar riset pengolahan produk')) {
                 $grouped['Kantor Daerah']['BBRP2BKP SLIPI'] = $entry;
             } elseif (str_contains($nama, 'balai besar riset sosial ekonomi')) {
                 $grouped['Kantor Daerah']['BBRSEKP ANCOL'] = $entry;
 
-
-                // UPT Sekretariat
+                // UPT SUBGROUPS
             } elseif ((str_contains($nama, 'loka') || str_contains($nama, 'riset')) && !str_contains($nama, 'penyuluhan')) {
-                $this->sumEntry($grouped['UPT Sekretariat'], $entry);
-
-                // UPT Penyuluhan
+                $this->sumEntry($grouped['UPT']['UPT Sekretariat'], $entry);
             } elseif (str_contains($nama, 'penyuluhan') && !str_contains($nama, 'pelatihan')) {
-                $this->sumEntry($grouped['UPT Penyuluhan'], $entry);
-
-                // UPT Pendidikan
+                $this->sumEntry($grouped['UPT']['UPT Penyuluhan'], $entry);
             } elseif (str_contains($nama, 'politeknik') || str_contains($nama, 'akademi') || str_contains($nama, 'sekolah')) {
-                $this->sumEntry($grouped['UPT Pendidikan'], $entry);
-
-                // UPT Pelatihan
+                $this->sumEntry($grouped['UPT']['UPT Pendidikan'], $entry);
             } elseif (str_contains($nama, 'pelatihan')) {
-                $this->sumEntry($grouped['UPT Pelatihan'], $entry);
+                $this->sumEntry($grouped['UPT']['UPT Pelatihan'], $entry);
             }
         }
 
-        // Calculate persen_realisasi
-        foreach ($grouped as $key => &$val) {
-            if (is_array($val) && array_key_exists('pagu', $val)) {
-                $val['persen_realisasi'] = $val['pagu'] > 0
-                    ? round(($val['realisasi_sampai_tanggal'] / $val['pagu']) * 100, 2)
+        // Final calculation
+        foreach ($grouped as &$group) {
+            if (isset($group['pagu'])) {
+                $group['persen_realisasi'] = $group['pagu'] > 0
+                    ? round(($group['realisasi_sampai_tanggal'] / $group['pagu']) * 100, 2)
                     : 0;
-            } elseif (is_array($val)) {
-                foreach ($val as &$sub) {
-                    $sub['persen_realisasi'] = $sub['pagu'] > 0
-                        ? round(($sub['realisasi_sampai_tanggal'] / $sub['pagu']) * 100, 2)
-                        : 0;
+            } elseif (is_array($group)) {
+                foreach ($group as &$sub) {
+                    if (isset($sub['pagu'])) {
+                        $sub['persen_realisasi'] = $sub['pagu'] > 0
+                            ? round(($sub['realisasi_sampai_tanggal'] / $sub['pagu']) * 100, 2)
+                            : 0;
+                    }
                 }
             }
         }
