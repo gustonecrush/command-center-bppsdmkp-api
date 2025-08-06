@@ -14,7 +14,7 @@ use App\Http\Controllers\Api\PesertaDidikController;
 use App\Http\Controllers\Api\PublicationController;
 use App\Http\Controllers\Api\SatuanPendidikanController;
 use App\Http\Controllers\Api\TenagaKependidikanController;
-use App\Http\Controllers\KinerjaController;
+use App\Http\Controllers\Api\KinerjaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
