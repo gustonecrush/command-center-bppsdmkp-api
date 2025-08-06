@@ -22,11 +22,11 @@ class KinerjaController extends Controller
                 return [
                     'sasaran' => $sasaran->nama,
                     'tahun' => $sasaran->tahun,
-                    'indikator_kinerja' => $sasaran->iku->map(function ($iku) {
+                    'indikator_kinerja' => $sasaran->iku ? $sasaran->iku->map(function ($iku) {
                         return [
                             'nama' => $iku->nama,
                             'unit_pj' => $iku->unit_pj,
-                            'output' => $iku->output->map(function ($output) {
+                            'output' => $iku->output ? $iku->output->map(function ($output) {
                                 return [
                                     'nama' => $output->nama,
                                     'kode' => $output->kode,
@@ -37,9 +37,9 @@ class KinerjaController extends Controller
                                     'r_tw' => $output->r_tw,
                                     'tw' => $output->tw,
                                 ];
-                            })
+                            }) : [],
                         ];
-                    })
+                    }) : [],
                 ];
             });
 
