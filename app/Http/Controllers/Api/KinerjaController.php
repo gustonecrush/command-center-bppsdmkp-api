@@ -12,37 +12,42 @@ class KinerjaController extends Controller
     {
         $tahun = $request->query('tahun');
 
+        if (!$tahun) {
+            return response()->json(['message' => 'Parameter tahun wajib diisi.'], 400);
+        }
+
         $data = TblSasaran::with(['indikatorKinerja' => function ($ikuQuery) use ($tahun) {
             $ikuQuery->where('tahun', $tahun)
                 ->with(['outputKomponen']);
         }])
             ->where('tahun', $tahun)
-            ->get()
-            ->map(function ($sasaran) {
-                return [
-                    'sasaran' => $sasaran->nama,
-                    'tahun' => $sasaran->tahun,
-                    'indikator_kinerja' => $sasaran->iku ? $sasaran->iku->map(function ($iku) {
-                        return [
-                            'nama' => $iku->nama,
-                            'unit_pj' => $iku->unit_pj,
-                            'output' => $iku->output ? $iku->output->map(function ($output) {
-                                return [
-                                    'nama' => $output->nama,
-                                    'kode' => $output->kode,
-                                    'alokasi_anggaran' => $output->alokasi_anggaran,
-                                    'realisasi_anggaran' => $output->realisasi_anggaran,
-                                    'satuan_target' => $output->satuan_target,
-                                    't_tw' => $output->t_tw,
-                                    'r_tw' => $output->r_tw,
-                                    'tw' => $output->tw,
-                                ];
-                            }) : [],
-                        ];
-                    }) : [],
-                ];
-            });
+            ->get();
 
-        return response()->json($data);
+        $result = $data->map(function ($sasaran) {
+            return [
+                'sasaran' => $sasaran->nama,
+                'tahun' => $sasaran->tahun,
+                'indikator_kinerja' => $sasaran->iku->map(function ($iku) {
+                    return [
+                        'nama' => $iku->nama,
+                        'unit_pj' => $iku->unit_pj,
+                        'output' => $iku->output->map(function ($output) {
+                            return [
+                                'nama' => $output->nama,
+                                'kode' => $output->kode,
+                                'alokasi_anggaran' => (float) $output->alokasi_anggaran,
+                                'realisasi_anggaran' => (float) $output->realisasi_anggaran,
+                                'satuan_target' => $output->satuan_target,
+                                't_tw' => (float) $output->t_tw,
+                                'r_tw' => (float) $output->r_tw,
+                                'tw' => $output->tw,
+                            ];
+                        }),
+                    ];
+                }),
+            ];
+        });
+
+        return response()->json($result);
     }
 }
