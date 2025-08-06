@@ -10,14 +10,14 @@ use Illuminate\Support\Facades\DB;
 
 class PenyuluhController extends Controller
 {
-    public function groupByStatus()
+    public function groupByStatus(Request $request)
     {
         $statusTypes = ['PNS', 'PPPK', 'PPB'];
 
-        return $this->groupByFixedTypes('status', $statusTypes);
+        return $this->groupByFixedTypes($request, 'status', $statusTypes);
     }
 
-    public function groupByJabatan()
+    public function groupByJabatan(Request $request)
     {
         $jabatanTypes = [
             'PP PEMULA',
@@ -29,28 +29,28 @@ class PenyuluhController extends Controller
             'PP MADYA'
         ];
 
-        return $this->groupByFixedTypes('jabatan', $jabatanTypes);
+        return $this->groupByFixedTypes($request, 'jabatan', $jabatanTypes);
     }
 
-    public function groupByPendidikan()
+    public function groupByPendidikan(Request $request)
     {
         $pendidikanTypes = ['S3', 'S2', 'S1/D4', 'D3', 'SMA'];
 
-        return $this->groupByFixedTypes('pendidikan', $pendidikanTypes);
+        return $this->groupByFixedTypes($request, 'pendidikan', $pendidikanTypes);
     }
 
-    public function groupByKelompokUsia()
+    public function groupByKelompokUsia(Request $request)
     {
         $usiaTypes = ['<= 25', '25-30', '30-35', '35-40', '40-45', '45-50', '50-55', '55-60', '> 60'];
 
-        return $this->groupByFixedTypes('kelompok_usia', $usiaTypes);
+        return $this->groupByFixedTypes($request, 'kelompok_usia', $usiaTypes);
     }
 
-    public function groupByKelamin()
+    public function groupByKelamin(Request $request)
     {
         $kelaminTypes = ['L', 'P'];
 
-        return $this->groupByFixedTypes('kelamin', $kelaminTypes);
+        return $this->groupByFixedTypes($request, 'kelamin', $kelaminTypes);
     }
 
     public function countBySatminkal()
@@ -64,11 +64,31 @@ class PenyuluhController extends Controller
     }
 
 
-    private function groupByFixedTypes(string $column, array $fixedTypes)
+    private function groupByFixedTypes(Request $request, string $column, array $fixedTypes)
     {
-        $data = Penyuluh::select('provinsi', $column, DB::raw('count(*) as total'))
-            ->whereNotNull('provinsi')
-            ->groupBy('provinsi', $column)
+        $tahun = $request->query('tahun'); // e.g., 2025
+        $tw = $request->query('tw');       // e.g., "TW I"
+
+        $twMapping = [
+            'TW I' => 'Triwulan 1',
+            'TW II' => 'Triwulan 2',
+            'TW III' => 'Triwulan 3',
+            'TW IV' => 'Triwulan 4',
+        ];
+
+        $triwulanFilter = null;
+        if ($tahun && $tw && isset($twMapping[$tw])) {
+            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
+        }
+
+        $query = Penyuluh::select('provinsi', $column, DB::raw('count(*) as total'))
+            ->whereNotNull('provinsi');
+
+        if ($triwulanFilter) {
+            $query->where('triwulan', $triwulanFilter);
+        }
+
+        $data = $query->groupBy('provinsi', $column)
             ->orderBy('provinsi')
             ->get();
 
@@ -89,6 +109,7 @@ class PenyuluhController extends Controller
 
         return response()->json($grouped);
     }
+
 
     public function getGroupedBySatminkalDetails(Request $request)
     {
