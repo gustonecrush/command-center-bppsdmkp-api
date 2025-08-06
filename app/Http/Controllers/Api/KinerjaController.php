@@ -18,7 +18,7 @@ class KinerjaController extends Controller
 
         $data = TblSasaran::with(['indikatorKinerja' => function ($ikuQuery) use ($tahun) {
             $ikuQuery->where('tahun', $tahun)
-                ->with(['outputKomponen']);
+                ->with('outputKomponen');
         }])
             ->where('tahun', $tahun)
             ->get();
@@ -27,11 +27,11 @@ class KinerjaController extends Controller
             return [
                 'sasaran' => $sasaran->nama,
                 'tahun' => $sasaran->tahun,
-                'indikator_kinerja' => $sasaran->iku->map(function ($iku) {
+                'indikator_kinerja' => $sasaran->indikatorKinerja->map(function ($iku) {
                     return [
                         'nama' => $iku->nama,
                         'unit_pj' => $iku->unit_pj,
-                        'output' => $iku->output->map(function ($output) {
+                        'output' => $iku->outputKomponen->map(function ($output) {
                             return [
                                 'nama' => $output->nama,
                                 'kode' => $output->kode,
