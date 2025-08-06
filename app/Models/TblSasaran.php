@@ -9,7 +9,7 @@ class TblSasaran extends Model
 {
     use HasFactory;
 
-    protected $table = "tbl_sasaran";
+    protected $table = "tbl_k_sasaran";
     protected $guarded = [];
 
     public function indikatorKinerja()
