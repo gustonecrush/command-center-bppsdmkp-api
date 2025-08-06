@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\PesertaDidikController;
 use App\Http\Controllers\Api\PublicationController;
 use App\Http\Controllers\Api\SatuanPendidikanController;
 use App\Http\Controllers\Api\TenagaKependidikanController;
+use App\Http\Controllers\KinerjaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -152,3 +153,5 @@ Route::get('/gapokkan/per-provinsi', [GapokkanDidampingiController::class, 'perP
 Route::get('/pentaru', [PentaruController::class, 'index']);
 Route::get('/pentaru/{no_pendaftaran}', [PentaruController::class, 'show']);
 Route::get('/pentaru/location', [PentaruController::class, 'location']);
+
+Route::get('/kinerja/summary', [KinerjaController::class, 'index']);
