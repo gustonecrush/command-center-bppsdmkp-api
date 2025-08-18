@@ -199,7 +199,7 @@ class KelompokDitingkatkanController extends Controller
     FROM kelompok_ditingkatkan kt
     LEFT JOIN mtr_kabupatens k 
         ON k.kabupaten LIKE CONCAT('%', kt.kab_kota, '%')
-    WHERE kt.no = ?
+    WHERE kt.no_piagam = ?
     LIMIT 1
 ";
 
