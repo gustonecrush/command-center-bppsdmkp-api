@@ -143,6 +143,8 @@ Route::prefix('kelompok-ditingkatkan')->group(function () {
     Route::get('/bidang-usaha-per-provinsi', [KelompokDitingkatkanController::class, 'bidangUsahaPerProvinsi']);
     Route::get('/kelas-per-provinsi', [KelompokDitingkatkanController::class, 'kelasPerProvinsi']);
     Route::get('/bidang-usaha-per-satminkal', [KelompokDitingkatkanController::class, 'bidangUsahaPerSatminkal']);
+    Route::get('/locations', [KelompokDitingkatkanController::class, 'getLocationKelompokDitingkatkan']);
+    Route::get('/{no}', [KelompokDitingkatkanController::class, 'getDetailKelompokDitingkatkan']);
 });
 
 Route::prefix('kelompok-dibentuk')->group(function () {
