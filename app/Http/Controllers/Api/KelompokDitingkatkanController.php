@@ -190,8 +190,15 @@ class KelompokDitingkatkanController extends Controller
         return response()->json($data);
     }
 
-    public function getDetailKelompokDitingkatkan($no)
+    public function getDetailKelompokDitingkatkan(Request $request)
     {
+        $no = $request->query('no');
+
+        if (!$no) {
+            return response()->json(['error' => 'Parameter no is required'], 400);
+        }
+
+
         $sql = "
     SELECT 
         kt.*,
@@ -208,7 +215,7 @@ class KelompokDitingkatkanController extends Controller
         $data = DB::selectOne($sql, [$no]);
 
         if (!$data) {
-            return response()->json(['message' => 'Penyuluh not found'], 404);
+            return response()->json(['message' => 'Kelompok not found'], 404);
         }
 
         return response()->json($data);

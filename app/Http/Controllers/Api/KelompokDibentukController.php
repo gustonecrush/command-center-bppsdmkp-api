@@ -139,26 +139,31 @@ class KelompokDibentukController extends Controller
         return response()->json($data);
     }
 
-    public function getDetailKelompokDibentuk($no)
+    public function getDetailKelompokDibentuk(Request $request)
     {
-        $sql = "
-    SELECT 
-        kb.*,
-        k.latitude,
-        k.longitude
-    FROM kelompok_dibentuk kb
-    LEFT JOIN mtr_kabupatens k 
-        ON k.kabupaten LIKE CONCAT('%', kb.kab_kota, '%')
-    WHERE kb.no_ba_pembentukan = ?
-    LIMIT 1
-";
+        $no = $request->query('no');
 
+        if (!$no) {
+            return response()->json(['error' => 'Parameter no is required'], 400);
+        }
+
+        $sql = "
+        SELECT 
+            kb.*,
+            k.latitude,
+            k.longitude
+        FROM kelompok_dibentuk kb
+        LEFT JOIN mtr_kabupatens k 
+            ON k.kabupaten LIKE CONCAT('%', kb.kab_kota, '%')
+        WHERE kb.no_ba_pembentukan = ?
+    ";
 
         $data = DB::selectOne($sql, [$no]);
 
         if (!$data) {
-            return response()->json(['message' => 'Penyuluh not found'], 404);
+            return response()->json(['message' => 'Kelompok not found'], 404);
         }
+
 
         return response()->json($data);
     }
