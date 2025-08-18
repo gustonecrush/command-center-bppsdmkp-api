@@ -167,7 +167,7 @@ class KelompokDisuluhController extends Controller
             SELECT 
                 ks.no,
                 ks.nama_kelompok,
-                ks.nama_ketuas,
+                ks.nama_ketua,
                 ks.satminkal,
                 k.latitude,
                 k.longitude
