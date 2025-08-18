@@ -168,6 +168,7 @@ class KelompokDitingkatkanController extends Controller
                 kt.nama_kelompok,
                 kt.nama_ketua,
                 kt.satminkal,
+                kt.no_piagam,
                 k.latitude,
                 k.longitude
             FROM kelompok_ditingkatkan kt

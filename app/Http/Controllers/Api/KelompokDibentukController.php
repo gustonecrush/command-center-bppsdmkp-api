@@ -116,6 +116,7 @@ class KelompokDibentukController extends Controller
             SELECT 
                 kb.no,
                 kb.nama_kelompok,
+                kb.no_ba_pembentukan,
                 kb.satminkal,
                 k.latitude,
                 k.longitude

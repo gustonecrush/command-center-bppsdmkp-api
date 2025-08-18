@@ -168,6 +168,7 @@ class KelompokDisuluhController extends Controller
                 ks.no,
                 ks.nama_kelompok,
                 ks.nama_ketua,
+                ks.nik,
                 ks.satminkal,
                 k.latitude,
                 k.longitude
