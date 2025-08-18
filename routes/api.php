@@ -156,6 +156,8 @@ Route::prefix('kelompok-dibentuk')->group(function () {
 
 Route::get('/gapokkan/per-satminkal', [GapokkanDidampingiController::class, 'perSatminkal']);
 Route::get('/gapokkan/per-provinsi', [GapokkanDidampingiController::class, 'perProvinsi']);
+Route::get('/gapokkan/locations', [GapokkanDidampingiController::class, 'getLocationGapokkan']);
+Route::get('/gapokkan/detail', [GapokkanDidampingiController::class, 'getDetailGapokkan']);
 
 
 Route::get('/pentaru', [PentaruController::class, 'index']);
