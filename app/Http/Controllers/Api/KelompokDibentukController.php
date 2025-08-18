@@ -93,4 +93,72 @@ class KelompokDibentukController extends Controller
 
         return $query;
     }
+
+    public function getLocationKelompokDibentuk(Request $request)
+    {
+
+        $tahun = $request->query('tahun'); // e.g., 2025
+        $tw = $request->query('tw');       // e.g., "TW I"
+
+        $twMapping = [
+            'TW I' => 'Triwulan 1',
+            'TW II' => 'Triwulan 2',
+            'TW III' => 'Triwulan 3',
+            'TW IV' => 'Triwulan 4',
+        ];
+
+        $triwulanFilter = null;
+        if ($tahun && $tw && isset($twMapping[$tw])) {
+            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
+        }
+
+        $sql = "
+            SELECT 
+                kb.no,
+                kb.nama_kelompok,
+                kb.satminkal,
+                k.latitude,
+                k.longitude
+            FROM kelompok_dibentuk kb
+            LEFT JOIN mtr_kabupatens k 
+                ON k.kabupaten LIKE CONCAT('%', kb.kab_kota, '%')
+            WHERE 1=1
+        ";
+
+        $bindings = [];
+
+        // Apply filter if ada triwulanFilter
+        if ($triwulanFilter) {
+            $sql .= " AND kb.triwulan = ? ";
+            $bindings[] = $triwulanFilter;
+        }
+
+        $data = DB::select($sql, $bindings);
+
+        return response()->json($data);
+    }
+
+    public function getDetailKelompokDibentuk($no)
+    {
+        $sql = "
+    SELECT 
+        kb.*,
+        k.latitude,
+        k.longitude
+    FROM kelompok_dibentuk kb
+    LEFT JOIN mtr_kabupatens k 
+        ON k.kabupaten LIKE CONCAT('%', kb.kab_kota, '%')
+    WHERE kb.no = ?
+    LIMIT 1
+";
+
+
+        $data = DB::selectOne($sql, [$no]);
+
+        if (!$data) {
+            return response()->json(['message' => 'Penyuluh not found'], 404);
+        }
+
+        return response()->json($data);
+    }
 }
