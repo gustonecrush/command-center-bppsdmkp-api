@@ -148,7 +148,7 @@ class KelompokDibentukController extends Controller
     FROM kelompok_dibentuk kb
     LEFT JOIN mtr_kabupatens k 
         ON k.kabupaten LIKE CONCAT('%', kb.kab_kota, '%')
-    WHERE kb.no = ?
+    WHERE kb.no_ba_pembentukan = ?
     LIMIT 1
 ";
 
