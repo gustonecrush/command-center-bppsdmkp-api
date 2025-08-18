@@ -132,6 +132,8 @@ Route::prefix('kelompok-disuluh')->group(function () {
     Route::get('/bidang-usaha-per-provinsi', [KelompokDisuluhController::class, 'bidangUsahaPerProvinsi']);
     Route::get('/kelas-per-provinsi', [KelompokDisuluhController::class, 'kelasKelompokPerProvinsi']);
     Route::get('/bidang-usaha-per-satminkal', [KelompokDisuluhController::class, 'bidangUsahaPerSatminkal']);
+    Route::get('/locations', [PenyuluhController::class, 'getLocationKelompokDisuluh']);
+    Route::get('/{no}', [PenyuluhController::class, 'getDetailKelompokDisuluh']);
 });
 
 
