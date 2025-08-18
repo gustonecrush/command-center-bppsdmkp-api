@@ -218,4 +218,22 @@ class PenyuluhController extends Controller
 
         return response()->json($data);
     }
+
+    public function getDetailPenyuluh($no)
+    {
+        $sql = "
+        SELECT *
+        FROM penyuluh
+        WHERE no = ?
+        LIMIT 1
+    ";
+
+        $data = DB::selectOne($sql, [$no]);
+
+        if (!$data) {
+            return response()->json(['message' => 'Penyuluh not found'], 404);
+        }
+
+        return response()->json($data);
+    }
 }
