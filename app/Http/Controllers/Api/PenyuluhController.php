@@ -192,7 +192,6 @@ class PenyuluhController extends Controller
             $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
         }
 
-        // Base query
         $sql = "
             SELECT 
                 p.no,
@@ -203,7 +202,7 @@ class PenyuluhController extends Controller
                 k.longitude
             FROM penyuluh p
             LEFT JOIN mtr_kabupatens k 
-                ON k.kabupaten = p.kab_kota
+                ON k.kabupaten LIKE CONCAT('%', p.kab_kota, '%')
             WHERE 1=1
         ";
 
