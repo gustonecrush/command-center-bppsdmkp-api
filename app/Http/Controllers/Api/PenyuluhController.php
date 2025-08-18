@@ -173,4 +173,50 @@ class PenyuluhController extends Controller
             ]
         ]);
     }
+
+    public function getLocationPenyuluh(Request $request)
+    {
+
+        $tahun = $request->query('tahun'); // e.g., 2025
+        $tw = $request->query('tw');       // e.g., "TW I"
+
+        $twMapping = [
+            'TW I' => 'Triwulan 1',
+            'TW II' => 'Triwulan 2',
+            'TW III' => 'Triwulan 3',
+            'TW IV' => 'Triwulan 4',
+        ];
+
+        $triwulanFilter = null;
+        if ($tahun && $tw && isset($twMapping[$tw])) {
+            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
+        }
+
+        // Base query
+        $sql = "
+            SELECT 
+                p.no,
+                p.nama,
+                p.status,
+                p.satminkal,
+                k.latitude,
+                k.longitude
+            FROM penyuluh p
+            LEFT JOIN mtr_kabupatens k 
+                ON k.kabupaten = p.kab_kota
+            WHERE 1=1
+        ";
+
+        $bindings = [];
+
+        // Apply filter if ada triwulanFilter
+        if ($triwulanFilter) {
+            $sql .= " AND p.triwulan = ? ";
+            $bindings[] = $triwulanFilter;
+        }
+
+        $data = DB::select($sql, $bindings);
+
+        return response()->json($data);
+    }
 }

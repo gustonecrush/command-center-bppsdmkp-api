@@ -122,6 +122,7 @@ Route::prefix('penyuluh')->group(function () {
     Route::get('/group-by-kelamin',       [PenyuluhController::class, 'groupByKelamin']);
     Route::get('/count-by-satminkal', [PenyuluhController::class, 'countBySatminkal']);
     Route::get('/grouped-by-satminkal', [PenyuluhController::class, 'getGroupedBySatminkalDetails']);
+    Route::get('/locations', [PenyuluhController::class, 'getLocationPenyuluh']);
 });
 
 Route::prefix('kelompok-disuluh')->group(function () {
