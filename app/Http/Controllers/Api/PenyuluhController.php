@@ -222,11 +222,17 @@ class PenyuluhController extends Controller
     public function getDetailPenyuluh($no)
     {
         $sql = "
-        SELECT *
-        FROM penyuluh
-        WHERE no = ?
-        LIMIT 1
-    ";
+    SELECT 
+        p.*,
+        k.latitude,
+        k.longitude
+    FROM penyuluh p
+    LEFT JOIN mtr_kabupatens k 
+        ON k.kabupaten LIKE CONCAT('%', p.kab_kota, '%')
+    WHERE p.no = ?
+    LIMIT 1
+";
+
 
         $data = DB::selectOne($sql, [$no]);
 
