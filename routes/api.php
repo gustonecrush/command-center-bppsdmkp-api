@@ -116,6 +116,7 @@ Route::post('/satuan-pendidikan/{rowId}/profile', [SatuanPendidikanController::c
 // Penyuluhan
 Route::prefix('penyuluh')->group(function () {
     Route::get('/group-by-status',        [PenyuluhController::class, 'groupByStatus']);
+    Route::get('/summary',        [PenyuluhController::class, 'resultSummary']);
     Route::get('/group-by-jabatan',       [PenyuluhController::class, 'groupByJabatan']);
     Route::get('/group-by-pendidikan',    [PenyuluhController::class, 'groupByPendidikan']);
     Route::get('/group-by-kelompok-usia', [PenyuluhController::class, 'groupByKelompokUsia']);

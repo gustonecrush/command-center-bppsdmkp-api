@@ -242,4 +242,74 @@ class PenyuluhController extends Controller
 
         return response()->json($data);
     }
+
+    public function resultSummary(Request $request)
+    {
+        $tahun = $request->query('tahun'); // e.g., 2025
+        $tw = $request->query('tw');       // e.g., "TW I"
+
+        $twMapping = [
+            'TW I' => 'Triwulan 1',
+            'TW II' => 'Triwulan 2',
+            'TW III' => 'Triwulan 3',
+            'TW IV' => 'Triwulan 4',
+        ];
+
+        $triwulanFilter = null;
+        if ($tahun && $tw && isset($twMapping[$tw])) {
+            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
+        }
+
+        $baseQuery = Penyuluh::query();
+        if ($triwulanFilter) {
+            $baseQuery->where('triwulan', $triwulanFilter);
+        }
+
+        // Ambil total per kategori
+        $statusSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'status', ['PNS', 'PPPK', 'PPB']);
+        $jabatanSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'jabatan', [
+            'PP PEMULA',
+            'APP TERAMPIL',
+            'APP MAHIR',
+            'APP PENYELIA',
+            'PP PERTAMA',
+            'PP MUDA',
+            'PP MADYA'
+        ]);
+        $pendidikanSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'pendidikan', ['S3', 'S2', 'S1/D4', 'D3', 'SMA']);
+        $usiaSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'kelompok_usia', ['<= 25', '25-30', '30-35', '35-40', '40-45', '45-50', '50-55', '55-60', '> 60']);
+        $kelaminSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'kelamin', ['L', 'P']);
+        $satminkalSummary = $baseQuery->clone()
+            ->select('satminkal', DB::raw('count(*) as total'))
+            ->whereNotNull('satminkal')
+            ->groupBy('satminkal')
+            ->get();
+
+        return response()->json([
+            'status'     => $statusSummary,
+            'jabatan'    => $jabatanSummary,
+            'pendidikan' => $pendidikanSummary,
+            'usia'       => $usiaSummary,
+            'kelamin'    => $kelaminSummary,
+            'satminkal'  => $satminkalSummary,
+        ]);
+    }
+
+    /**
+     * Helper untuk summary tanpa group provinsi (total nasional).
+     */
+    private function groupByFixedTypesRaw($query, string $column, array $fixedTypes)
+    {
+        $data = $query->select($column, DB::raw('count(*) as total'))
+            ->groupBy($column)
+            ->get();
+
+        return collect($fixedTypes)->map(function ($type) use ($data, $column) {
+            $match = $data->firstWhere($column, $type);
+            return [
+                $column => $type,
+                'total' => $match ? $match->total : 0
+            ];
+        });
+    }
 }
