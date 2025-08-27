@@ -63,7 +63,6 @@ class PenyuluhController extends Controller
         return response()->json($data);
     }
 
-
     private function groupByFixedTypes(Request $request, string $column, array $fixedTypes)
     {
         $tahun = $request->query('tahun'); // e.g., 2025
@@ -135,7 +134,7 @@ class PenyuluhController extends Controller
             'PP MADYA'
         ];
         $pendidikanTypes = ['S3', 'S2', 'S1/D4', 'D3', 'SMA'];
-        $usiaTypes = ['<= 25', '25-30', '30-35', '35-40', '40-45', '45-50', '50-55', '55-60', '> 60'];
+        $usiaTypes = ['<= 35', '36-50', '>= 51'];
         $kelaminTypes = ['L', 'P'];
 
         $groupedDetails = function ($column, $types) use ($baseQuery) {
@@ -311,5 +310,46 @@ class PenyuluhController extends Controller
                 'total' => $match ? $match->total : 0
             ];
         });
+    }
+
+    public function getValueBox(Request $request)
+    {
+        $tahun = $request->query('tahun'); // e.g., 2025
+        $tw = $request->query('tw');       // e.g., "TW I"
+
+        $twMapping = [
+            'TW I' => 'Triwulan 1',
+            'TW II' => 'Triwulan 2',
+            'TW III' => 'Triwulan 3',
+            'TW IV' => 'Triwulan 4',
+        ];
+
+        $triwulanFilter = null;
+        if ($tahun && $tw && isset($twMapping[$tw])) {
+            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
+        }
+
+        // Base query
+        $baseQuery = Penyuluh::query();
+
+        // Apply filter if exist
+        if ($triwulanFilter) {
+            $baseQuery->where('triwulan', $triwulanFilter);
+        }
+
+        // Get total count
+        $total_penyuluh = (clone $baseQuery)->count();
+
+        // Get count by status
+        $total_pns   = (clone $baseQuery)->where('status', 'PNS')->count();
+        $total_pppk  = (clone $baseQuery)->where('status', 'PPPK')->count();
+        $total_ppb   = (clone $baseQuery)->where('status', 'PPB')->count();
+
+        return response()->json([
+            'total_penyuluh' => $total_penyuluh,
+            'total_pns'      => $total_pns,
+            'total_pppk'     => $total_pppk,
+            'total_ppb'      => $total_ppb,
+        ]);
     }
 }
