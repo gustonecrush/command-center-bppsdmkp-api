@@ -41,7 +41,7 @@ class PenyuluhController extends Controller
 
     public function groupByKelompokUsia(Request $request)
     {
-        $usiaTypes = ['<= 25', '25-30', '30-35', '35-40', '40-45', '45-50', '50-55', '55-60', '> 60'];
+        $usiaTypes = ['<= 35', '36-50', '>= 51'];
 
         return $this->groupByFixedTypes($request, 'kelompok_usia', $usiaTypes);
     }
@@ -276,7 +276,7 @@ class PenyuluhController extends Controller
             'PP MADYA'
         ]);
         $pendidikanSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'pendidikan', ['S3', 'S2', 'S1/D4', 'D3', 'SMA']);
-        $usiaSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'kelompok_usia', ['<= 25', '25-30', '30-35', '35-40', '40-45', '45-50', '50-55', '55-60', '> 60']);
+        $usiaSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'kelompok_usia', ['<= 35', '36-50', '>= 51']);
         $kelaminSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'kelamin', ['L', 'P']);
         $satminkalSummary = $baseQuery->clone()
             ->select('satminkal', DB::raw('count(*) as total'))
