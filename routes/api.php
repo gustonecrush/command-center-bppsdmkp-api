@@ -124,7 +124,7 @@ Route::prefix('penyuluh')->group(function () {
     Route::get('/count-by-satminkal', [PenyuluhController::class, 'countBySatminkal']);
     Route::get('/grouped-by-satminkal', [PenyuluhController::class, 'getGroupedBySatminkalDetails']);
     Route::get('/locations', [PenyuluhController::class, 'getLocationPenyuluh']);
-    Route::get('/{no}', [PenyuluhController::class, 'getDetailPenyuluh']);
+    Route::get('/detail/{no}', [PenyuluhController::class, 'getDetailPenyuluh']);
     Route::get('/summary/total', [PenyuluhController::class, 'getValueBox']);
 });
 
