@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Alumni;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AlumniController extends Controller
 {
@@ -282,6 +283,42 @@ class AlumniController extends Controller
         return response()->json($data);
     }
 
+    // public function location(Request $request)
+    // {
+    //     $tingkatPendidikan = $request->query('tingkatPendidikan');
+    //     $tahunLulus = $request->query('selectedYear');
+
+    //     $alumni = Alumni::query()
+    //         ->when($tahunLulus, function ($query) use ($tahunLulus) {
+    //             return $query->where('tahun_lulus', $tahunLulus);
+    //         })
+    //         ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
+    //             $q->join('satuan_pendidikan as sp', 'alumnis.id_satdik', '=', 'sp.RowID');
+
+    //             if ($tingkatPendidikan === 'Menengah') {
+    //                 $q->where('sp.nama', 'LIKE', '%Sekolah%');
+    //             } elseif ($tingkatPendidikan === 'Tinggi') {
+    //                 $q->where(function ($q2) {
+    //                     $q2->where('sp.nama', 'LIKE', '%Politeknik%')
+    //                         ->orWhere('sp.nama', 'LIKE', '%Akademi%')
+    //                         ->orWhere('sp.nama', 'LIKE', '%Pasca%');
+    //                 });
+    //             }
+    //         })
+    //         ->leftJoin('mtr_kabupatens as kab', 'alumnis.kota_kabupaten', '=', 'kab.kabupaten')
+    //         ->select([
+    //             'alumnis.id_alumni',
+    //             'alumnis.name',
+    //             'alumnis.tahun_lulus',
+    //             'alumnis.program_studi',
+    //             'kab.latitude',
+    //             'kab.longitude'
+    //         ])
+    //         ->get();
+
+    //     return response()->json($alumni);
+    // }
+
     public function location(Request $request)
     {
         $tingkatPendidikan = $request->query('tingkatPendidikan');
@@ -310,13 +347,14 @@ class AlumniController extends Controller
                 'alumnis.name',
                 'alumnis.tahun_lulus',
                 'alumnis.program_studi',
-                'kab.latitude',
-                'kab.longitude'
+                DB::raw('COALESCE(alumnis.latitude, kab.latitude) as latitude'),
+                DB::raw('COALESCE(alumnis.longitude, kab.longitude) as longitude'),
             ])
             ->get();
 
         return response()->json($alumni);
     }
+
 
     public function show($id)
     {
