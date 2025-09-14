@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\PublicationController;
 use App\Http\Controllers\Api\SatuanPendidikanController;
 use App\Http\Controllers\Api\TenagaKependidikanController;
 use App\Http\Controllers\Api\KinerjaController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::post('/login', [UserController::class, 'login']);
+Route::post('/register', [UserController::class, 'register']);
+Route::post('/logout', [UserController::class, 'logout']);
+
 
 Route::get('/pendidiks', [PendidikController::class, 'index']);
 Route::get('/pendidiks/summary', [PendidikController::class, 'summary']);
