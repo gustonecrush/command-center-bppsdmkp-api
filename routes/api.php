@@ -132,6 +132,7 @@ Route::prefix('penyuluh')->group(function () {
     Route::get('/locations', [PenyuluhController::class, 'getLocationPenyuluh']);
     Route::get('/detail/{no}', [PenyuluhController::class, 'getDetailPenyuluh']);
     Route::get('/summary/total', [PenyuluhController::class, 'getValueBox']);
+    Route::get('/summary/penyuluhan', [PenyuluhController::class, 'getSummaryPenyuluhan']);
 });
 
 Route::prefix('kelompok-disuluh')->group(function () {

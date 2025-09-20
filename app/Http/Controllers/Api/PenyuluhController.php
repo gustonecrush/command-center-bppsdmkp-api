@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\GapokkanDidampingi;
+use App\Models\KelompokDibentuk;
+use App\Models\KelompokDisuluh;
+use App\Models\KelompokDitingkatkan;
 use App\Models\Penyuluh;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -351,5 +355,50 @@ class PenyuluhController extends Controller
             'total_pppk'     => $total_pppk,
             'total_ppb'      => $total_ppb,
         ]);
+    }
+
+    public function getSummaryPenyuluhan(Request $request)
+    {
+        $tahun = $request->query('tahun'); // e.g., 2025
+        $tw = $request->query('tw');       // e.g., "TW I"
+
+        $twMapping = [
+            'TW I' => 'Triwulan 1',
+            'TW II' => 'Triwulan 2',
+            'TW III' => 'Triwulan 3',
+            'TW IV' => 'Triwulan 4',
+        ];
+
+        $triwulanFilter = null;
+        if ($tahun && $tw && isset($twMapping[$tw])) {
+            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
+        }
+
+        // Base query
+        $baseQueryPenyuluh = Penyuluh::query();
+        $baseQueryKelompokDisuluh = KelompokDisuluh::query();
+        $baseQueryKelompokDitingkatkan = KelompokDitingkatkan::query();
+        $baseQueryKelompokDibentuk = KelompokDibentuk::query();
+        $baseQueryGapokkan = GapokkanDidampingi::query();
+
+        // Apply filter if exist
+        if ($triwulanFilter) {
+            $baseQueryPenyuluh->where('triwulan', $triwulanFilter);
+            $baseQueryKelompokDisuluh->where('triwulan', $triwulanFilter);
+            $baseQueryKelompokDitingkatkan->where('triwulan', $triwulanFilter);
+            $baseQueryKelompokDibentuk->where('triwulan', $triwulanFilter);
+            $baseQueryGapokkan->where('triwulan', $triwulanFilter);
+        }
+
+        // Hitung total masing-masing
+        $summary = [
+            'total_penyuluh' => $baseQueryPenyuluh->count(),
+            'total_kelompok_disuluh' => $baseQueryKelompokDisuluh->count(),
+            'total_kelompok_ditingkatkan' => $baseQueryKelompokDitingkatkan->count(),
+            'total_kelompok_dibentuk' => $baseQueryKelompokDibentuk->count(),
+            'total_gapokkan_didampingi' => $baseQueryGapokkan->count(),
+        ];
+
+        return response()->json($summary);
     }
 }
