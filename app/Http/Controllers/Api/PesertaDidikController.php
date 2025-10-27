@@ -48,7 +48,7 @@ class PesertaDidikController extends Controller
 
         // Filter by provinsi
         if ($provinsi && $provinsi !== 'All') {
-            $query->where('pd.provinsi', $provinsi);
+            $query->where('pd.id_provinsi', $provinsi);
         }
 
         // Filter by kabupaten
