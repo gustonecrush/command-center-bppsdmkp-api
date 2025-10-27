@@ -61,7 +61,6 @@ class PesertaDidikController extends Controller
         return response()->json($data);
     }
 
-
     public function summary(Request $request)
     {
         try {
