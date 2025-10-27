@@ -26,10 +26,15 @@ class PesertaDidikController extends Controller
         $tingkatPendidikan = $request->input('tingkatPendidikan');
         $provinsi = $request->input('provinsi');
         $kabupaten = $request->input('kabupaten');
+        $name = $request->input('name');
 
         $query = DB::table('peserta_didiks as pd')
             ->select('pd.nama_lengkap', 'pd.id_peserta_didik', 'mk.latitude', 'mk.longitude')
             ->leftJoin('mtr_kabupatens as mk', DB::raw("CAST(pd.id_kabupaten AS CHAR) COLLATE utf8mb4_general_ci"), '=', 'mk.id');
+
+        if ($name) {
+            $query->where('pd.nama_lengkap', 'LIKE', '%' . $name . '%');
+        }
 
         // Filter by tingkatPendidikan
         if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
