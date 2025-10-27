@@ -173,7 +173,7 @@ class PesertaDidikController extends Controller
                     $q->where('peserta_didiks.id_satdik', $satdik_id);
                 })
                 ->when($provinsi && $provinsi !== 'All', function ($q) use ($provinsi) {
-                    $q->where('peserta_didiks.provinsi', $provinsi);
+                    $q->where('peserta_didiks.id_provinsi', $provinsi);
                 })
                 ->when($kabupaten && $kabupaten !== 'All', function ($q) use ($kabupaten) {
                     $q->where('peserta_didiks.id_kabupaten', $kabupaten);
