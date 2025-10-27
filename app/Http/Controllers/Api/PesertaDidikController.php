@@ -335,6 +335,7 @@ class PesertaDidikController extends Controller
             $peserta = DB::table('peserta_didiks as pd')
                 ->select(
                     'pd.*',
+                    'mk.alt_kabupaten',
                     'mk.latitude',
                     'mk.longitude'
                 )
