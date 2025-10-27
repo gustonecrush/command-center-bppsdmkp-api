@@ -347,8 +347,10 @@ class AlumniController extends Controller
                 'alumnis.name',
                 'alumnis.tahun_lulus',
                 'alumnis.program_studi',
-                DB::raw('COALESCE(alumnis.latitude, kab.latitude) as latitude'),
-                DB::raw('COALESCE(alumnis.longitude, kab.longitude) as longitude'),
+                // 'DB::raw('COALESCE(alumnis.latitude, kab.latitude) as latitude')',
+                // DB::raw('COALESCE(alumnis.longitude, kab.longitude) as longitude'),
+                'alumnis.latitude',
+                'alumnis.longitude'
             ])
             ->get();
 
