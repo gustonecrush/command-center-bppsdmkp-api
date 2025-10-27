@@ -373,6 +373,7 @@ class PenyuluhController extends Controller
         $tw = $request->query('tw');
         $provinsiCode = $request->query('provinsi');
         $kabupaten = $request->query('kabupaten');
+        $name = $request->input('name');
 
         $twMapping = [
             'TW I' => 'Triwulan 1',
@@ -394,6 +395,8 @@ class PenyuluhController extends Controller
                 ->first();
             $provinsiName = $provinsi ? $provinsi->provinsi : null;
         }
+
+
 
         $sql = "
         SELECT
@@ -424,6 +427,11 @@ class PenyuluhController extends Controller
         if ($kabupaten) {
             $sql .= " AND p.kab_kota LIKE ? ";
             $bindings[] = "%{$kabupaten}%";
+        }
+
+        if ($name) {
+            $sql .= " AND p.nama LIKE ? ";
+            $bindings[] = "%{$name}%";
         }
 
         $data = DB::select($sql, $bindings);
