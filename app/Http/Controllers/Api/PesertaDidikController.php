@@ -24,12 +24,14 @@ class PesertaDidikController extends Controller
     public function getStudentWithLocation(Request $request)
     {
         $tingkatPendidikan = $request->input('tingkatPendidikan');
+        $provinsi = $request->input('provinsi');
+        $kabupaten = $request->input('kabupaten');
 
         $query = DB::table('peserta_didiks as pd')
             ->select('pd.nama_lengkap', 'pd.id_peserta_didik', 'mk.latitude', 'mk.longitude')
             ->leftJoin('mtr_kabupatens as mk', DB::raw("CAST(pd.id_kabupaten AS CHAR) COLLATE utf8mb4_general_ci"), '=', 'mk.id');
 
-        // ⬇️ Apply filter based on tingkatPendidikan if provided
+        // Filter by tingkatPendidikan
         if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
             $query->join('satuan_pendidikan as sp', 'pd.id_satdik', '=', 'sp.RowID');
 
@@ -42,6 +44,16 @@ class PesertaDidikController extends Controller
                         ->orWhere('sp.nama', 'LIKE', '%Pasca%');
                 });
             }
+        }
+
+        // Filter by provinsi
+        if ($provinsi && $provinsi !== 'All') {
+            $query->where('mk.id_provinsi', $provinsi);
+        }
+
+        // Filter by kabupaten
+        if ($kabupaten && $kabupaten !== 'All') {
+            $query->where('pd.id_kabupaten', $kabupaten);
         }
 
         $data = $query->get();
