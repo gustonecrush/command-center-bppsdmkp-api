@@ -67,12 +67,25 @@ class PesertaDidikController extends Controller
         try {
             $satdik_id = $request->query('satdik_id');
             $tingkatPendidikan = $request->query('tingkatPendidikan');
+            $provinsi = $request->query('provinsi');
+            $kabupaten = $request->query('kabupaten');
 
             $satdikNama = null;
             $query = PesertaDidik::query();
             $query->where('status', 'Active');
+
             if ($satdik_id) {
                 $query->where('peserta_didiks.id_satdik', $satdik_id);
+            }
+
+            // Filter by provinsi
+            if ($provinsi && $provinsi !== 'All') {
+                $query->where('peserta_didiks.provinsi', $provinsi);
+            }
+
+            // Filter by kabupaten
+            if ($kabupaten && $kabupaten !== 'All') {
+                $query->where('peserta_didiks.id_kabupaten', $kabupaten);
             }
 
             if ($tingkatPendidikan && $tingkatPendidikan !== 'All') {
@@ -126,8 +139,6 @@ class PesertaDidikController extends Controller
                 ->orderByDesc('count')
                 ->get();
 
-
-
             $province_counts = (clone $query)
                 ->selectRaw('provinsi, COUNT(*) as count')
                 ->groupBy('provinsi')
@@ -146,8 +157,6 @@ class PesertaDidikController extends Controller
                 ->orderByDesc('count')
                 ->get();
 
-
-
             $kampusAUP = [
                 'Politeknik AUP',
                 'Pasca Sarjana Politeknik AUP',
@@ -162,6 +171,12 @@ class PesertaDidikController extends Controller
                 ->where('peserta_didiks.status', 'Active')
                 ->when($satdik_id, function ($q) use ($satdik_id) {
                     $q->where('peserta_didiks.id_satdik', $satdik_id);
+                })
+                ->when($provinsi && $provinsi !== 'All', function ($q) use ($provinsi) {
+                    $q->where('peserta_didiks.provinsi', $provinsi);
+                })
+                ->when($kabupaten && $kabupaten !== 'All', function ($q) use ($kabupaten) {
+                    $q->where('peserta_didiks.id_kabupaten', $kabupaten);
                 })
                 ->whereIn('sp.nama', $kampusAUP)
                 ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
@@ -179,11 +194,16 @@ class PesertaDidikController extends Controller
                 ->groupBy('nama_satdik')
                 ->first();
 
-            // Query kampus selain Politeknik AUP
             $otherSatdikCounts = PesertaDidik::join('satuan_pendidikan as sp', 'peserta_didiks.id_satdik', '=', 'sp.RowID')
                 ->where('peserta_didiks.status', 'Active')
                 ->when($satdik_id, function ($q) use ($satdik_id) {
                     $q->where('peserta_didiks.id_satdik', $satdik_id);
+                })
+                ->when($provinsi && $provinsi !== 'All', function ($q) use ($provinsi) {
+                    $q->where('peserta_didiks.provinsi', $provinsi);
+                })
+                ->when($kabupaten && $kabupaten !== 'All', function ($q) use ($kabupaten) {
+                    $q->where('peserta_didiks.id_kabupaten', $kabupaten);
                 })
                 ->whereNotIn('sp.nama', $kampusAUP)
                 ->when($tingkatPendidikan && $tingkatPendidikan !== 'All', function ($q) use ($tingkatPendidikan) {
@@ -202,14 +222,11 @@ class PesertaDidikController extends Controller
                 ->orderByDesc('count')
                 ->get();
 
-            // Gabungkan hasil politeknik AUP di depan, lalu kampus lain
             $nama_satdik_count = $otherSatdikCounts;
             if ($politeknikAupCount) {
                 $nama_satdik_count->prepend($politeknikAupCount);
             }
 
-
-            // ---------------- RETURN ------------------
             return response()->json([
                 'parent_job_count' => $parent_job_count,
                 'origin_count' => $origin_count,
@@ -227,8 +244,6 @@ class PesertaDidikController extends Controller
             return response()->json(['error' => 'Something went wrong.'], 500);
         }
     }
-
-
 
     public function summaryPerType(Request $request)
     {
