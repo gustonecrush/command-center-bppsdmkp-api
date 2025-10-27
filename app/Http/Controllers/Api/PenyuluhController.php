@@ -67,53 +67,6 @@ class PenyuluhController extends Controller
         return response()->json($data);
     }
 
-    private function groupByFixedTypes(Request $request, string $column, array $fixedTypes)
-    {
-        $tahun = $request->query('tahun'); // e.g., 2025
-        $tw = $request->query('tw');       // e.g., "TW I"
-
-        $twMapping = [
-            'TW I' => 'Triwulan 1',
-            'TW II' => 'Triwulan 2',
-            'TW III' => 'Triwulan 3',
-            'TW IV' => 'Triwulan 4',
-        ];
-
-        $triwulanFilter = null;
-        if ($tahun && $tw && isset($twMapping[$tw])) {
-            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
-        }
-
-        $query = Penyuluh::select('provinsi', $column, DB::raw('count(*) as total'))
-            ->whereNotNull('provinsi');
-
-        if ($triwulanFilter) {
-            $query->where('triwulan', $triwulanFilter);
-        }
-
-        $data = $query->groupBy('provinsi', $column)
-            ->orderBy('provinsi')
-            ->get();
-
-        $grouped = $data->groupBy('provinsi')->map(function ($items, $provinsi) use ($column, $fixedTypes) {
-            $result = collect($fixedTypes)->map(function ($type) use ($items, $column) {
-                $match = $items->firstWhere($column, $type);
-                return [
-                    $column => $type,
-                    'total' => $match ? $match->total : 0
-                ];
-            });
-
-            return [
-                'provinsi' => $provinsi,
-                $column => $result
-            ];
-        })->values();
-
-        return response()->json($grouped);
-    }
-
-
     public function getGroupedBySatminkalDetails(Request $request)
     {
         $keyword = $request->query('satminkal');
@@ -177,51 +130,6 @@ class PenyuluhController extends Controller
         ]);
     }
 
-    public function getLocationPenyuluh(Request $request)
-    {
-
-        $tahun = $request->query('tahun'); // e.g., 2025
-        $tw = $request->query('tw');       // e.g., "TW I"
-
-        $twMapping = [
-            'TW I' => 'Triwulan 1',
-            'TW II' => 'Triwulan 2',
-            'TW III' => 'Triwulan 3',
-            'TW IV' => 'Triwulan 4',
-        ];
-
-        $triwulanFilter = null;
-        if ($tahun && $tw && isset($twMapping[$tw])) {
-            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
-        }
-
-        $sql = "
-            SELECT 
-                p.no,
-                p.nama,
-                p.status,
-                p.satminkal,
-                k.latitude,
-                k.longitude
-            FROM penyuluh p
-            LEFT JOIN mtr_kabupatens k 
-                ON k.kabupaten LIKE CONCAT('%', p.kab_kota, '%')
-            WHERE 1=1
-        ";
-
-        $bindings = [];
-
-        // Apply filter if ada triwulanFilter
-        if ($triwulanFilter) {
-            $sql .= " AND p.triwulan = ? ";
-            $bindings[] = $triwulanFilter;
-        }
-
-        $data = DB::select($sql, $bindings);
-
-        return response()->json($data);
-    }
-
     public function getDetailPenyuluh($no)
     {
         $sql = "
@@ -246,57 +154,6 @@ class PenyuluhController extends Controller
         return response()->json($data);
     }
 
-    public function resultSummary(Request $request)
-    {
-        $tahun = $request->query('tahun'); // e.g., 2025
-        $tw = $request->query('tw');       // e.g., "TW I"
-
-        $twMapping = [
-            'TW I' => 'Triwulan 1',
-            'TW II' => 'Triwulan 2',
-            'TW III' => 'Triwulan 3',
-            'TW IV' => 'Triwulan 4',
-        ];
-
-        $triwulanFilter = null;
-        if ($tahun && $tw && isset($twMapping[$tw])) {
-            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
-        }
-
-        $baseQuery = Penyuluh::query();
-        if ($triwulanFilter) {
-            $baseQuery->where('triwulan', $triwulanFilter);
-        }
-
-        // Ambil total per kategori
-        $statusSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'status', ['PNS', 'PPPK', 'PPB']);
-        $jabatanSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'jabatan', [
-            'PP PEMULA',
-            'APP TERAMPIL',
-            'APP MAHIR',
-            'APP PENYELIA',
-            'PP PERTAMA',
-            'PP MUDA',
-            'PP MADYA'
-        ]);
-        $pendidikanSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'pendidikan', ['S3', 'S2', 'S1/D4', 'D3', 'SMA']);
-        $usiaSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'kelompok_usia', ['<= 35', '36-50', '>= 51']);
-        $kelaminSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'kelamin', ['L', 'P']);
-        $satminkalSummary = $baseQuery->clone()
-            ->select('satminkal', DB::raw('count(*) as total'))
-            ->whereNotNull('satminkal')
-            ->groupBy('satminkal')
-            ->get();
-
-        return response()->json([
-            'status'     => $statusSummary,
-            'jabatan'    => $jabatanSummary,
-            'pendidikan' => $pendidikanSummary,
-            'usia'       => $usiaSummary,
-            'kelamin'    => $kelaminSummary,
-            'satminkal'  => $satminkalSummary,
-        ]);
-    }
 
     /**
      * Helper untuk summary tanpa group provinsi (total nasional).
@@ -318,8 +175,10 @@ class PenyuluhController extends Controller
 
     public function getValueBox(Request $request)
     {
-        $tahun = $request->query('tahun'); // e.g., 2025
-        $tw = $request->query('tw');       // e.g., "TW I"
+        $tahun = $request->query('tahun');
+        $tw = $request->query('tw');
+        $provinsiCode = $request->query('provinsi'); // "1029"
+        $kabupaten = $request->query('kabupaten');
 
         $twMapping = [
             'TW I' => 'Triwulan 1',
@@ -333,18 +192,31 @@ class PenyuluhController extends Controller
             $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
         }
 
+        // Get provinsi name from code
+        $provinsiName = null;
+        if ($provinsiCode) {
+            $provinsi = DB::table('mtr_provinsis')
+                ->where('id', $provinsiCode)
+                ->first();
+            $provinsiName = $provinsi ? $provinsi->provinsi : null;
+        }
+
         // Base query
         $baseQuery = Penyuluh::query();
 
-        // Apply filter if exist
+        // Apply filters
         if ($triwulanFilter) {
             $baseQuery->where('triwulan', $triwulanFilter);
         }
+        if ($provinsiName) {
+            $baseQuery->where('provinsi', $provinsiName);
+        }
+        if ($kabupaten) {
+            $baseQuery->where('kab_kota', 'LIKE', "%{$kabupaten}%");
+        }
 
-        // Get total count
+        // Get counts
         $total_penyuluh = (clone $baseQuery)->count();
-
-        // Get count by status
         $total_pns   = (clone $baseQuery)->where('status', 'PNS')->count();
         $total_pppk  = (clone $baseQuery)->where('status', 'PPPK')->count();
         $total_ppb   = (clone $baseQuery)->where('status', 'PPB')->count();
@@ -359,8 +231,10 @@ class PenyuluhController extends Controller
 
     public function getSummaryPenyuluhan(Request $request)
     {
-        $tahun = $request->query('tahun'); // e.g., 2025
-        $tw = $request->query('tw');       // e.g., "TW I"
+        $tahun = $request->query('tahun');
+        $tw = $request->query('tw');
+        $provinsiCode = $request->query('provinsi');
+        $kabupaten = $request->query('kabupaten');
 
         $twMapping = [
             'TW I' => 'Triwulan 1',
@@ -374,23 +248,43 @@ class PenyuluhController extends Controller
             $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
         }
 
-        // Base query
+        // Get provinsi name from code
+        $provinsiName = null;
+        if ($provinsiCode) {
+            $provinsi = DB::table('mtr_provinsis')
+                ->where('id', $provinsiCode)
+                ->first();
+            $provinsiName = $provinsi ? $provinsi->provinsi : null;
+        }
+
+        // Base queries
         $baseQueryPenyuluh = Penyuluh::query();
         $baseQueryKelompokDisuluh = KelompokDisuluh::query();
         $baseQueryKelompokDitingkatkan = KelompokDitingkatkan::query();
         $baseQueryKelompokDibentuk = KelompokDibentuk::query();
         $baseQueryGapokkan = GapokkanDidampingi::query();
 
-        // Apply filter if exist
-        if ($triwulanFilter) {
-            $baseQueryPenyuluh->where('triwulan', $triwulanFilter);
-            $baseQueryKelompokDisuluh->where('triwulan', $triwulanFilter);
-            $baseQueryKelompokDitingkatkan->where('triwulan', $triwulanFilter);
-            $baseQueryKelompokDibentuk->where('triwulan', $triwulanFilter);
-            $baseQueryGapokkan->where('triwulan', $triwulanFilter);
+        // Apply filters
+        $queries = [
+            $baseQueryPenyuluh,
+            $baseQueryKelompokDisuluh,
+            $baseQueryKelompokDitingkatkan,
+            $baseQueryKelompokDibentuk,
+            $baseQueryGapokkan
+        ];
+
+        foreach ($queries as $query) {
+            if ($triwulanFilter) {
+                $query->where('triwulan', $triwulanFilter);
+            }
+            if ($provinsiName) {
+                $query->where('provinsi', $provinsiName);
+            }
+            if ($kabupaten) {
+                $query->where('kab_kota', 'LIKE', "%{$kabupaten}%");
+            }
         }
 
-        // Hitung total masing-masing
         $summary = [
             'total_penyuluh' => $baseQueryPenyuluh->count(),
             'total_kelompok_disuluh' => $baseQueryKelompokDisuluh->count(),
@@ -400,5 +294,204 @@ class PenyuluhController extends Controller
         ];
 
         return response()->json($summary);
+    }
+
+    public function resultSummary(Request $request)
+    {
+        $tahun = $request->query('tahun');
+        $tw = $request->query('tw');
+        $provinsiCode = $request->query('provinsi');
+        $kabupaten = $request->query('kabupaten');
+
+        $twMapping = [
+            'TW I' => 'Triwulan 1',
+            'TW II' => 'Triwulan 2',
+            'TW III' => 'Triwulan 3',
+            'TW IV' => 'Triwulan 4',
+        ];
+
+        $triwulanFilter = null;
+        if ($tahun && $tw && isset($twMapping[$tw])) {
+            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
+        }
+
+        // Get provinsi name from code
+        $provinsiName = null;
+        if ($provinsiCode) {
+            $provinsi = DB::table('mtr_provinsis')
+                ->where('id', $provinsiCode)
+                ->first();
+            $provinsiName = $provinsi ? $provinsi->provinsi : null;
+        }
+
+        $baseQuery = Penyuluh::query();
+
+        // Apply filters
+        if ($triwulanFilter) {
+            $baseQuery->where('triwulan', $triwulanFilter);
+        }
+        if ($provinsiName) {
+            $baseQuery->where('provinsi', $provinsiName);
+        }
+        if ($kabupaten) {
+            $baseQuery->where('kab_kota', 'LIKE', "%{$kabupaten}%");
+        }
+
+        // Get summaries
+        $statusSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'status', ['PNS', 'PPPK', 'PPB']);
+        $jabatanSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'jabatan', [
+            'PP PEMULA',
+            'APP TERAMPIL',
+            'APP MAHIR',
+            'APP PENYELIA',
+            'PP PERTAMA',
+            'PP MUDA',
+            'PP MADYA'
+        ]);
+        $pendidikanSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'pendidikan', ['S3', 'S2', 'S1/D4', 'D3', 'SMA']);
+        $usiaSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'kelompok_usia', ['<= 35', '36-50', '>= 51']);
+        $kelaminSummary = $this->groupByFixedTypesRaw(clone $baseQuery, 'kelamin', ['L', 'P']);
+        $satminkalSummary = $baseQuery->clone()
+            ->select('satminkal', DB::raw('count(*) as total'))
+            ->whereNotNull('satminkal')
+            ->groupBy('satminkal')
+            ->get();
+
+        return response()->json([
+            'status' => $statusSummary,
+            'jabatan' => $jabatanSummary,
+            'pendidikan' => $pendidikanSummary,
+            'usia' => $usiaSummary,
+            'kelamin' => $kelaminSummary,
+            'satminkal' => $satminkalSummary,
+        ]);
+    }
+
+    public function getLocationPenyuluh(Request $request)
+    {
+        $tahun = $request->query('tahun');
+        $tw = $request->query('tw');
+        $provinsiCode = $request->query('provinsi');
+        $kabupaten = $request->query('kabupaten');
+
+        $twMapping = [
+            'TW I' => 'Triwulan 1',
+            'TW II' => 'Triwulan 2',
+            'TW III' => 'Triwulan 3',
+            'TW IV' => 'Triwulan 4',
+        ];
+
+        $triwulanFilter = null;
+        if ($tahun && $tw && isset($twMapping[$tw])) {
+            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
+        }
+
+        // Get provinsi name from code
+        $provinsiName = null;
+        if ($provinsiCode) {
+            $provinsi = DB::table('mtr_provinsis')
+                ->where('id', $provinsiCode)
+                ->first();
+            $provinsiName = $provinsi ? $provinsi->provinsi : null;
+        }
+
+        $sql = "
+        SELECT
+            p.no,
+            p.nama,
+            p.status,
+            p.satminkal,
+            k.latitude,
+            k.longitude
+        FROM penyuluh p
+        LEFT JOIN mtr_kabupatens k
+            ON k.kabupaten LIKE CONCAT('%', p.kab_kota, '%')
+        WHERE 1=1
+    ";
+
+        $bindings = [];
+
+        if ($triwulanFilter) {
+            $sql .= " AND p.triwulan = ? ";
+            $bindings[] = $triwulanFilter;
+        }
+
+        if ($provinsiName) {
+            $sql .= " AND p.provinsi = ? ";
+            $bindings[] = $provinsiName;
+        }
+
+        if ($kabupaten) {
+            $sql .= " AND p.kab_kota LIKE ? ";
+            $bindings[] = "%{$kabupaten}%";
+        }
+
+        $data = DB::select($sql, $bindings);
+
+        return response()->json($data);
+    }
+
+    private function groupByFixedTypes(Request $request, string $column, array $fixedTypes)
+    {
+        $tahun = $request->query('tahun');
+        $tw = $request->query('tw');
+        $provinsiCode = $request->query('provinsi');
+        $kabupaten = $request->query('kabupaten');
+
+        $twMapping = [
+            'TW I' => 'Triwulan 1',
+            'TW II' => 'Triwulan 2',
+            'TW III' => 'Triwulan 3',
+            'TW IV' => 'Triwulan 4',
+        ];
+
+        $triwulanFilter = null;
+        if ($tahun && $tw && isset($twMapping[$tw])) {
+            $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
+        }
+
+        // Get provinsi name from code
+        $provinsiName = null;
+        if ($provinsiCode) {
+            $provinsi = DB::table('mtr_provinsis')
+                ->where('id', $provinsiCode)
+                ->first();
+            $provinsiName = $provinsi ? $provinsi->provinsi : null;
+        }
+
+        $query = Penyuluh::select('provinsi', $column, DB::raw('count(*) as total'))
+            ->whereNotNull('provinsi');
+
+        // Apply filters
+        if ($triwulanFilter) {
+            $query->where('triwulan', $triwulanFilter);
+        }
+        if ($provinsiName) {
+            $query->where('provinsi', $provinsiName);
+        }
+        if ($kabupaten) {
+            $query->where('kab_kota', 'LIKE', "%{$kabupaten}%");
+        }
+
+        $data = $query->groupBy('provinsi', $column)
+            ->orderBy('provinsi')
+            ->get();
+
+        $grouped = $data->groupBy('provinsi')->map(function ($items, $prov) use ($column, $fixedTypes) {
+            $result = collect($fixedTypes)->map(function ($type) use ($items, $column) {
+                $match = $items->firstWhere($column, $type);
+                return [
+                    $column => $type,
+                    'total' => $match ? $match->total : 0
+                ];
+            });
+
+            return [
+                'provinsi' => $prov,
+                $column => $result
+            ];
+        })->values();
+
+        return response()->json($grouped);
     }
 }
