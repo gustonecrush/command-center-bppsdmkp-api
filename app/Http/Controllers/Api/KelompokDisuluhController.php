@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 
 class KelompokDisuluhController extends Controller
 {
-    // ✅ Private reusable method to apply triwulan filter
     private function applyTriwulanFilter($query, Request $request)
     {
         $tahun = $request->query('tahun');
@@ -30,12 +29,35 @@ class KelompokDisuluhController extends Controller
         return $query;
     }
 
+    private function applyLocationFilter($query, Request $request)
+    {
+        $provinsiCode = $request->query('provinsi');
+        $kabupaten = $request->query('kabupaten');
+
+        if ($provinsiCode) {
+            $provinsi = DB::table('mtr_provinsis')
+                ->where('id', $provinsiCode)
+                ->first();
+
+            if ($provinsi) {
+                $query->where('provinsi', $provinsi->provinsi);
+            }
+        }
+
+        if ($kabupaten) {
+            $query->where('kab_kota', 'LIKE', "%{$kabupaten}%");
+        }
+
+        return $query;
+    }
+
     public function jumlahPerSatminkal(Request $request)
     {
         $query = KelompokDisuluh::select('satminkal', DB::raw('COUNT(*) as jml_kelompok'))
             ->whereNotNull('satminkal');
 
         $query = $this->applyTriwulanFilter($query, $request);
+        $query = $this->applyLocationFilter($query, $request);
 
         $data = $query->groupBy('satminkal')
             ->orderBy('satminkal')
@@ -50,6 +72,7 @@ class KelompokDisuluhController extends Controller
             ->whereNotNull('provinsi');
 
         $query = $this->applyTriwulanFilter($query, $request);
+        $query = $this->applyLocationFilter($query, $request);
 
         $data = $query->groupBy('provinsi')
             ->orderBy('provinsi')
@@ -66,6 +89,7 @@ class KelompokDisuluhController extends Controller
             ->whereNotNull('provinsi');
 
         $query = $this->applyTriwulanFilter($query, $request);
+        $query = $this->applyLocationFilter($query, $request);
 
         $baseQuery = $query->groupBy('provinsi', 'bidang_usaha')->get();
 
@@ -95,6 +119,7 @@ class KelompokDisuluhController extends Controller
             ->whereNotNull('provinsi');
 
         $query = $this->applyTriwulanFilter($query, $request);
+        $query = $this->applyLocationFilter($query, $request);
 
         $baseQuery = $query->groupBy('provinsi', 'kelas_kelompok')->get();
 
@@ -124,6 +149,7 @@ class KelompokDisuluhController extends Controller
             ->whereNotNull('satminkal');
 
         $query = $this->applyTriwulanFilter($query, $request);
+        $query = $this->applyLocationFilter($query, $request);
 
         $baseQuery = $query->groupBy('satminkal', 'bidang_usaha')->get();
 
@@ -144,12 +170,12 @@ class KelompokDisuluhController extends Controller
 
         return response()->json($result);
     }
-
     public function getLocationKelompokDisuluh(Request $request)
     {
-
-        $tahun = $request->query('tahun'); // e.g., 2025
-        $tw = $request->query('tw');       // e.g., "TW I"
+        $tahun = $request->query('tahun');
+        $tw = $request->query('tw');
+        $provinsiCode = $request->query('provinsi');
+        $kabupaten = $request->query('kabupaten');
 
         $twMapping = [
             'TW I' => 'Triwulan 1',
@@ -163,27 +189,45 @@ class KelompokDisuluhController extends Controller
             $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
         }
 
+        // Get provinsi name from code
+        $provinsiName = null;
+        if ($provinsiCode) {
+            $provinsi = DB::table('mtr_provinsis')
+                ->where('id', $provinsiCode)
+                ->first();
+            $provinsiName = $provinsi ? $provinsi->provinsi : null;
+        }
+
         $sql = "
-            SELECT 
-                ks.no,
-                ks.nama_kelompok,
-                ks.nama_ketua,
-                ks.nik,
-                ks.satminkal,
-                k.latitude,
-                k.longitude
-            FROM kelompok_disuluh ks
-            LEFT JOIN mtr_kabupatens k 
-                ON k.kabupaten LIKE CONCAT('%', ks.kab_kota, '%')
-            WHERE 1=1
-        ";
+        SELECT 
+            ks.no,
+            ks.nama_kelompok,
+            ks.nama_ketua,
+            ks.nik,
+            ks.satminkal,
+            k.latitude,
+            k.longitude
+        FROM kelompok_disuluh ks
+        LEFT JOIN mtr_kabupatens k 
+            ON k.kabupaten LIKE CONCAT('%', ks.kab_kota, '%')
+        WHERE 1=1
+    ";
 
         $bindings = [];
 
-        // Apply filter if ada triwulanFilter
         if ($triwulanFilter) {
             $sql .= " AND ks.triwulan = ? ";
             $bindings[] = $triwulanFilter;
+        }
+
+        if ($provinsiName) {
+            $sql .= " AND ks.provinsi = ? ";
+            $bindings[] = $provinsiName;
+        }
+
+        if ($kabupaten) {
+            $sql .= " AND ks.kab_kota LIKE ? ";
+            $bindings[] = "%{$kabupaten}%";
         }
 
         $data = DB::select($sql, $bindings);

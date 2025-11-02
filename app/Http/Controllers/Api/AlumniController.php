@@ -379,6 +379,7 @@ class AlumniController extends Controller
                     });
                 }
             })
+            ->where('alumnis.status_pekerjaan', 'sudah')
             ->select([
                 'alumnis.id_alumni',
                 'alumnis.name',

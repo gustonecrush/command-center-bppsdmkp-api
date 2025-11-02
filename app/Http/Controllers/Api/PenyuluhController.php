@@ -397,7 +397,6 @@ class PenyuluhController extends Controller
         }
 
 
-
         $sql = "
         SELECT
             p.no,

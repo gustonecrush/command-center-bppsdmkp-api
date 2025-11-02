@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class GapokkanDidampingiController extends Controller
 {
-    private function applyTriwulanFilter($query, $request)
+    private function applyTriwulanFilter($query, Request $request)
     {
         $tahun = $request->query('tahun');
         $tw = $request->query('tw');
@@ -29,6 +29,28 @@ class GapokkanDidampingiController extends Controller
         return $query;
     }
 
+    private function applyLocationFilter($query, Request $request)
+    {
+        $provinsiCode = $request->query('provinsi');
+        $kabupaten = $request->query('kabupaten');
+
+        if ($provinsiCode) {
+            $provinsi = DB::table('mtr_provinsis')
+                ->where('id', $provinsiCode)
+                ->first();
+
+            if ($provinsi) {
+                $query->where('provinsi', $provinsi->provinsi);
+            }
+        }
+
+        if ($kabupaten) {
+            $query->where('kab_kota', 'LIKE', "%{$kabupaten}%");
+        }
+
+        return $query;
+    }
+
     public function perSatminkal(Request $request)
     {
         $query = GapokkanDidampingi::select('satminkal')
@@ -38,6 +60,7 @@ class GapokkanDidampingiController extends Controller
             ->groupBy('satminkal');
 
         $filteredQuery = $this->applyTriwulanFilter($query, $request);
+        $filteredQuery = $this->applyLocationFilter($query, $request);
         $data = $filteredQuery->get();
 
         return response()->json($data);
@@ -53,6 +76,7 @@ class GapokkanDidampingiController extends Controller
             ->groupBy('provinsi');
 
         $filteredQuery = $this->applyTriwulanFilter($query, $request);
+        $filteredQuery = $this->applyLocationFilter($query, $request);
         $data = $filteredQuery->get();
 
         return response()->json($data);
@@ -60,9 +84,10 @@ class GapokkanDidampingiController extends Controller
 
     public function getLocationGapokkan(Request $request)
     {
-
-        $tahun = $request->query('tahun'); // e.g., 2025
-        $tw = $request->query('tw');       // e.g., "TW I"
+        $tahun = $request->query('tahun');
+        $tw = $request->query('tw');
+        $provinsiCode = $request->query('provinsi');
+        $kabupaten = $request->query('kabupaten');
 
         $twMapping = [
             'TW I' => 'Triwulan 1',
@@ -76,27 +101,45 @@ class GapokkanDidampingiController extends Controller
             $triwulanFilter = "{$twMapping[$tw]} Tahun {$tahun}";
         }
 
+        // Get provinsi name from code
+        $provinsiName = null;
+        if ($provinsiCode) {
+            $provinsi = DB::table('mtr_provinsis')
+                ->where('id', $provinsiCode)
+                ->first();
+            $provinsiName = $provinsi ? $provinsi->provinsi : null;
+        }
+
         $sql = "
-            SELECT 
-                gp.no,
-                gp.nama,
-                gp.nama_ketua,
-                gp.nomor_ba,
-                gp.satminkal,
-                k.latitude,
-                k.longitude
-            FROM gapokkan_didampingi gp
-            LEFT JOIN mtr_kabupatens k 
-                ON k.kabupaten LIKE CONCAT('%', gp.kab_kota, '%')
-            WHERE 1=1
-        ";
+        SELECT 
+            gp.no,
+            gp.nama,
+            gp.nama_ketua,
+            gp.nomor_ba,
+            gp.satminkal,
+            k.latitude,
+            k.longitude
+        FROM gapokkan_didampingi gp
+        LEFT JOIN mtr_kabupatens k 
+            ON k.kabupaten LIKE CONCAT('%', gp.kab_kota, '%')
+        WHERE 1=1
+    ";
 
         $bindings = [];
 
-        // Apply filter if ada triwulanFilter
         if ($triwulanFilter) {
             $sql .= " AND gp.triwulan = ? ";
             $bindings[] = $triwulanFilter;
+        }
+
+        if ($provinsiName) {
+            $sql .= " AND gp.provinsi = ? ";
+            $bindings[] = $provinsiName;
+        }
+
+        if ($kabupaten) {
+            $sql .= " AND gp.kab_kota LIKE ? ";
+            $bindings[] = "%{$kabupaten}%";
         }
 
         $data = DB::select($sql, $bindings);
