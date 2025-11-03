@@ -11,7 +11,7 @@ class MtrProvinsiController extends Controller
 {
     public function index()
     {
-        $provinsis = MtrProvinsi::select('id', 'kode', 'provinsi')->get();
+        $provinsis = MtrProvinsi::select('id', 'kode', 'provinsi', 'lat', 'lon')->get();
 
         return response()->json([
             'success' => true,
