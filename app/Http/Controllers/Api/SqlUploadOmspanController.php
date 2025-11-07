@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class SqlUploadManajerialController extends Controller
+class SqlUploadOmspanController extends Controller
 {
     private $allowedTables = [
         'tbl_dipa_pendapatan',

@@ -13,10 +13,12 @@ use App\Http\Controllers\Api\PenyuluhController;
 use App\Http\Controllers\Api\PesertaDidikController;
 use App\Http\Controllers\Api\PublicationController;
 use App\Http\Controllers\Api\SatuanPendidikanController;
+use App\Http\Controllers\Api\SqlUploadManajerialController;
 use App\Http\Controllers\Api\TenagaKependidikanController;
 use App\Http\Controllers\Api\KinerjaController;
 use App\Http\Controllers\Api\MtrKabupatenController;
 use App\Http\Controllers\Api\MtrProvinsiController;
+use App\Http\Controllers\Api\SqlUploadOmspanController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -180,3 +182,6 @@ Route::get('/kinerja/summary', [KinerjaController::class, 'index']);
 
 Route::get('/provinsi', [MtrProvinsiController::class, 'index']);
 Route::get('/kabupaten/{id_provinsi}', [MtrKabupatenController::class, 'getByProvinsi']);
+
+
+Route::post('/omspan/upload-sql', [SqlUploadOmspanController::class, 'upload']);
