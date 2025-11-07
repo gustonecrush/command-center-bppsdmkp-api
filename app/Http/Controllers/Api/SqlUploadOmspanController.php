@@ -21,7 +21,7 @@ class SqlUploadOmspanController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'sql_file' => 'required|file|mimes:sql,txt|max:10240'
+            'sql_file' => 'required|file|mimes:sql,txt|max:20240'
         ]);
 
         try {
