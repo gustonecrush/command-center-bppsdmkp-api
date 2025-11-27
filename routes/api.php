@@ -185,3 +185,27 @@ Route::get('/kabupaten/{id_provinsi}', [MtrKabupatenController::class, 'getByPro
 
 
 Route::post('/omspan/upload-sql', [SqlUploadOmspanController::class, 'upload']);
+
+
+Route::prefix('kinerja')->group(function () {
+    // Main endpoint
+    Route::get('/', [KinerjaController::class, 'index']);
+
+    // Sasaran
+    Route::get('/sasaran', [KinerjaController::class, 'getSasaran']);
+    Route::post('/sasaran', [KinerjaController::class, 'storeSasaran']);
+    Route::put('/sasaran/{id}', [KinerjaController::class, 'updateSasaran']);
+    Route::delete('/sasaran/{id}', [KinerjaController::class, 'deleteSasaran']);
+
+    // IKU
+    Route::get('/iku', [KinerjaController::class, 'getIku']);
+    Route::post('/iku', [KinerjaController::class, 'storeIku']);
+    Route::put('/iku/{id}', [KinerjaController::class, 'updateIku']);
+    Route::delete('/iku/{id}', [KinerjaController::class, 'deleteIku']);
+
+    // Output
+    Route::get('/output', [KinerjaController::class, 'getOutput']);
+    Route::post('/output', [KinerjaController::class, 'storeOutput']);
+    Route::put('/output/{id}', [KinerjaController::class, 'updateOutput']);
+    Route::delete('/output/{id}', [KinerjaController::class, 'deleteOutput']);
+});
