@@ -69,6 +69,10 @@ Route::get('/', []);
 Route::get('/pentaru/pendaftar/{id}', [PentaruController::class, 'showByRowID']);
 
 Route::get('/satuan-pendidikan', [SatuanPendidikanController::class, 'index']);
+Route::post('/satuan-pendidikan', [SatuanPendidikanController::class, 'store']);
+Route::put('/satuan-pendidikan/{rowId}', [SatuanPendidikanController::class, 'update']);
+Route::delete('/satuan-pendidikan/{rowId}', [SatuanPendidikanController::class, 'destroy']);
+Route::post('/satuan-pendidikan/{rowId}/upload-website', [SatuanPendidikanController::class, 'updateWebsite']);
 
 Route::get('/rekap-per-pusat', [ManagerialController::class, 'rekapPerSatker']);
 Route::get('/tanggal-omspan', [ManagerialController::class, 'getDistinctTanggalOmspan']);
