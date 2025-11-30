@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\SatuanPendidikanController;
 use App\Http\Controllers\Api\SqlUploadManajerialController;
 use App\Http\Controllers\Api\TenagaKependidikanController;
 use App\Http\Controllers\Api\KinerjaController;
+use App\Http\Controllers\Api\LembagaPelatihanController;
 use App\Http\Controllers\Api\MtrKabupatenController;
 use App\Http\Controllers\Api\MtrProvinsiController;
 use App\Http\Controllers\Api\SqlUploadOmspanController;
@@ -43,14 +44,11 @@ Route::post('/login', [UserController::class, 'login']);
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/logout', [UserController::class, 'logout']);
 
-
 Route::get('/pendidiks', [PendidikController::class, 'index']);
 Route::get('/pendidiks/summary', [PendidikController::class, 'summary']);
 
-
 Route::get('/tenaga-kependidikans', [TenagaKependidikanController::class, 'index']);
 Route::get('/tenaga-kependidikans/summary', [TenagaKependidikanController::class, 'summary']);
-
 
 Route::get('/peserta-didiks', [PesertaDidikController::class, 'index']);
 Route::get('/peserta-didiks/getStudentWithLocation', [PesertaDidikController::class, 'getStudentWithLocation']);
@@ -59,10 +57,8 @@ Route::get('/alumnis/summary', [AlumniController::class, 'summary']);
 Route::get('/alumnis/location', [AlumniController::class, 'location']);
 Route::get('/alumnis/{id}', [AlumniController::class, 'show']);
 
-
 Route::get('/peserta-didiks/summary', action: [PesertaDidikController::class, 'summary']);
 Route::get('/peserta-didiks/{id}', action: [PesertaDidikController::class, 'show']);
-
 
 Route::get('/', []);
 
@@ -74,11 +70,18 @@ Route::put('/satuan-pendidikan/{rowId}', [SatuanPendidikanController::class, 'up
 Route::delete('/satuan-pendidikan/{rowId}', [SatuanPendidikanController::class, 'destroy']);
 Route::post('/satuan-pendidikan/{rowId}/upload-website', [SatuanPendidikanController::class, 'updateWebsite']);
 
+Route::prefix('lembaga-pelatihan')->group(function () {
+    Route::get('/', [LembagaPelatihanController::class, 'index']);
+    Route::post('/', [LembagaPelatihanController::class, 'store']);
+    Route::put('/{rowId}', [LembagaPelatihanController::class, 'update']);
+    Route::delete('/{rowId}', [LembagaPelatihanController::class, 'destroy']);
+    Route::post('/{rowId}/upload-image', [LembagaPelatihanController::class, 'updateWebsite']);
+});
+
 Route::get('/rekap-per-pusat', [ManagerialController::class, 'rekapPerSatker']);
 Route::get('/tanggal-omspan', [ManagerialController::class, 'getDistinctTanggalOmspan']);
 Route::get('/tanggal-omspan-pendapatan', [ManagerialController::class, 'getDistinctTanggalOmspanPendapatan']);
 Route::get('/tanggal-omspan-pbj', [ManagerialController::class, 'getDistinctTanggalOmspanPBJ']);
-
 
 Route::get('/pendapatan/rekap-per-satker', [ManagerialController::class, 'rekapPerSatkerPendapatan']);
 Route::get('/pendapatan/realisasi-sisa', [ManagerialController::class, 'getRealisasiDanSisaPendapatan']);
